@@ -1,0 +1,22 @@
+[project]
+name = "preprocessing"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "notebook>=7.5.4",
+  "numpy>=2.4.2",
+  "pandas>=3.0.1",
+  "scipy>=1.17.1",
+]
+
+# tool.uv.package = true
+
+# [project.scripts]
+# notebook = "jupyter-notebook ./Preprocessing.ipynb"
+
+[tool.jupyter]
+jupyter.allow_multiple_notebooks = true
+name = "My Notebook Name"
+path = "path/to/your/notebook.ipynb"
