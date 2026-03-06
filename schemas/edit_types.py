@@ -1,0 +1,9 @@
+REVISION_ID = "revision_id"
+# Page ID
+PAGE_ID = "page_id"
+USER_TEXT = "user_text"
+REVISION_TIMESTAMP = "revision_timestamp"
+REVISION_COMMENT = "revision_comment"
+EDIT_TYPES_JSON = "edit_types_json"
+REVISION_TAGS = "revision_tags"
+IS_BOT = "is_bot"
