@@ -23,12 +23,16 @@ ALL_LANGUAGES = ["ar", "de", "en", "es", "fr", "it", "nl", "pl", "ru", "sv"]
 def load_entity_list(path: str) -> list:
     """Load the precomputed feature JSON.
     Handles both a list of dicts and a dict-of-dicts (key = username).
+    Injects the outer key as 'user_text' if not already present.
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    # If it's a dict of dicts, convert to list
     if isinstance(data, dict):
-        return list(data.values())
+        result = []
+        for username, attrs in data.items():
+            attrs["user_text"] = username
+            result.append(attrs)
+        return result
     return data
 
 def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:

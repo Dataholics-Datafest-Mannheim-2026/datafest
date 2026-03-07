@@ -102,6 +102,50 @@ def export_results(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
     return result
 
 
+
+def export_bot_usernames(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
+                          bot_clusters: set,
+                          output_path: str = "bot_usernames.json"):
+    """
+    Export usernames from bot clusters as JSON.
+    Structure: {cluster_id: {"known_bots": [...], "undetected_bots": [...]}}
+    Plus a flat list of all bot-cluster usernames under "all".
+    """
+    import json
+
+    cluster_arr = np.array(cluster_labels)
+    usernames   = feature_df["user_text"].to_list()
+    is_bot_list = feature_df["is_bot"].to_list()
+
+    result = {}
+    all_usernames = []
+
+    for c in sorted(bot_clusters):
+        mask           = cluster_arr == c
+        cluster_users  = [(u, b) for u, b, m in zip(usernames, is_bot_list, mask) if m]
+        known_bots     = [u for u, b in cluster_users if b]
+        undetected     = [u for u, b in cluster_users if not b]
+        all_usernames += [u for u, _ in cluster_users]
+
+        result[int(c)] = {
+            "n_total":         len(cluster_users),
+            "known_bots":      known_bots,
+            "undetected_bots": undetected,
+        }
+
+    result["all_bot_cluster_users"] = all_usernames
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+
+    print(f"Bot usernames saved to {output_path}")
+    print(f"  Total users in bot clusters: {len(all_usernames)}")
+    for c, v in result.items():
+        if c == "all_bot_cluster_users":
+            continue
+        print(f"  Cluster {c}: {v['n_total']} users "              f"({len(v['known_bots'])} known bots, {len(v['undetected_bots'])} undetected)")
+    return result
+
 # ─────────────────────────────────────────────
 # MAIN  –  change N_CLUSTERS here
 # ─────────────────────────────────────────────
@@ -110,6 +154,9 @@ if __name__ == "__main__":
     ENTITY_LIST_PATH = r"../entity_list.json"
     DATA_DIR         = r"../../data"
     N_CLUSTERS = 12   # <- adjust freely
+
+    # Override which clusters to export as bots (set to None to use automatic detection)
+    EXPORT_CLUSTERS = {6}   # Manually specify or none
 
     print("Loading entity list...")
     entity_list = load_entity_list(ENTITY_LIST_PATH)
@@ -133,17 +180,27 @@ if __name__ == "__main__":
     print("\nLabelling clusters via ground truth:")
     bot_clusters, cluster_profiles = label_clusters(feature_df, cluster_labels)
 
+    # Override bot clusters for export if specified
+    if EXPORT_CLUSTERS is not None:
+        print(f"\n  → Overriding bot clusters for export: {EXPORT_CLUSTERS}")
+        export_clusters = {np.int32(c) for c in EXPORT_CLUSTERS}
+    else:
+        export_clusters = bot_clusters
+
     print("\nPlotting...")
     plot_results(X_pca_2d, cluster_labels, feature_df["is_bot"].to_list(),
-                 bot_clusters, pca_2d)
+                 export_clusters, pca_2d)
 
     print("\nFeature Importance...")
     plot_pca_loadings(pca_2d, feature_cols, top_n=10,
                       output_path="kmeans_pca_loadings.png")
 
     print("\nCluster Feature Profiles...")
-    plot_cluster_profiles(feature_df, cluster_labels, bot_clusters, top_n=10,
+    plot_cluster_profiles(feature_df, cluster_labels, export_clusters, top_n=10,
                           output_path="kmeans_cluster_profiles.png")
 
     print("\nExporting results...")
-    export_results(feature_df, cluster_labels, bot_clusters)
+    export_results(feature_df, cluster_labels, export_clusters)
+
+    print("\nExporting bot usernames...")
+    export_bot_usernames(feature_df, cluster_labels, export_clusters)
