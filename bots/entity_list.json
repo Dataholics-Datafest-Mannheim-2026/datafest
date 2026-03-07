@@ -1,0 +1,44 @@
+[
+  {
+    "user_text": "user_text",
+    "avg_revision_comment_length": 10,
+    "revision_timestamp": {
+      "typical_edit_time": "2026-03-07 09:20:13.204111944 +01:00",
+      "avg_edit_hours": 5
+    },
+    "revision_tags": [
+      {
+        "tag1": 2,
+        "tag2": 4
+      }
+    ],
+    "total_edits": 120,
+    "edits_per_day": [
+      null
+    ],
+    "number_reverted_edits": 19,
+    "pct_of_reverted_edits": 19,
+    "pct_of_reverting_edits": 10
+  },
+  {
+    "user_text": "user_text",
+    "avg_revision_comment_length": 10,
+    "revision_timestamp": {
+      "typical_edit_time": "2026-03-07 09:20:13.204111944 +01:00",
+      "avg_edit_hours": 5
+    },
+    "revision_tags": [
+      {
+        "tag1": 2,
+        "tag2": 4
+      }
+    ],
+    "total_edits": 120,
+    "edits_per_day": [
+      null
+    ],
+    "number_reverted_edits": 19,
+    "pct_of_reverted_edits": 19,
+    "pct_of_reverting_edits": 10
+  }
+]
