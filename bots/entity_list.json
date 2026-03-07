@@ -2,10 +2,7 @@
   {
     "user_text": "user_text",
     "avg_revision_comment_length": 10,
-    "revision_timestamp": {
-      "typical_edit_time": "2026-03-07 09:20:13.204111944 +01:00",
-      "avg_edit_hours": 5
-    },
+    "avg_edit_hours": 5,
     "revision_tags": [
       {
         "tag1": 2,
@@ -16,17 +13,15 @@
     "edits_per_day": [
       null
     ],
-    "number_reverted_edits": 19,
     "pct_of_reverted_edits": 19,
-    "pct_of_reverting_edits": 10
+    "pct_of_reverting_edits": 10,
+    "unique_edited_articels": 30,
+    "unique_edited_languages": 2
   },
   {
     "user_text": "user_text",
     "avg_revision_comment_length": 10,
-    "revision_timestamp": {
-      "typical_edit_time": "2026-03-07 09:20:13.204111944 +01:00",
-      "avg_edit_hours": 5
-    },
+    "avg_edit_hours": 5,
     "revision_tags": [
       {
         "tag1": 2,
@@ -37,8 +32,9 @@
     "edits_per_day": [
       null
     ],
-    "number_reverted_edits": 19,
     "pct_of_reverted_edits": 19,
-    "pct_of_reverting_edits": 10
+    "pct_of_reverting_edits": 10,
+    "unique_edited_articels": 30,
+    "unique_edited_languages": 2
   }
 ]
