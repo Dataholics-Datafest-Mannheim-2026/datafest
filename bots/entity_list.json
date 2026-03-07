@@ -1110,7 +1110,8 @@
     "pct_of_reverted_edits": 19,
     "pct_of_reverting_edits": 10,
     "unique_edited_articels": 30,
-    "unique_edited_languages": 2
+    "unique_edited_languages": 2,
+    "median_seconds_between_edits": 30
   },
   {
     "user_text": "user_text",
@@ -2223,6 +2224,7 @@
     "pct_of_reverted_edits": 19,
     "pct_of_reverting_edits": 10,
     "unique_edited_articels": 30,
-    "unique_edited_languages": 2
+    "unique_edited_languages": 2,
+    "median_seconds_between_edits": 30
   }
 ]
