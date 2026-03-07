@@ -1,320 +1,320 @@
-- lang: ru
+- wiki_db: ruwiki
   items:
-  - id: '32053'
-    accesses: 127435
-    title: not_found
-  - id: '1820458'
-    accesses: 127466
-    title: Алфёрова,_Ксения_Александровна
-  - id: '8553303'
-    accesses: 127510
-    title: Монблан
-  - id: '376622'
-    accesses: 127545
-    title: Колесо_Времени
-  - id: '8083613'
-    accesses: 127563
-    title: Шерлок_Холмс_3
-  - id: '229996'
-    accesses: 127575
-    title: Орлов,_Дмитрий_Анатольевич
-  - id: '1008093'
-    accesses: 127575
-    title: Империоли,_Майкл
-  - id: '1759681'
-    accesses: 127579
-    title: США_во_Второй_мировой_войне
-  - id: '4897912'
-    accesses: 127593
-    title: Промес,_Квинси
-  - id: '9960901'
-    accesses: 127596
-    title: Головин,_Владислав_Николаевич
-- lang: de
+  - pageviews: 3478891
+    page_id: 9224529
+    page_title: null
+  - pageviews: 3825394
+    page_id: 7984229
+    page_title: null
+  - pageviews: 3891906
+    page_id: 5723
+    page_title: null
+  - pageviews: 4362561
+    page_id: 9
+    page_title: null
+  - pageviews: 5401211
+    page_id: 10887786
+    page_title: null
+  - pageviews: 6033481
+    page_id: 9799861
+    page_title: null
+  - pageviews: 6721698
+    page_id: 10287715
+    page_title: null
+  - pageviews: 6892281
+    page_id: 275424
+    page_title: null
+  - pageviews: 101848764
+    page_id: 9744
+    page_title: null
+  - pageviews: 144687972
+    page_id: 4401
+    page_title: null
+- wiki_db: arwiki
   items:
-  - id: '11189973'
-    accesses: 103117
-    title: not_found
-  - id: '6576716'
-    accesses: 103118
-    title: Polizistenmord_von_Heilbronn
-  - id: '48106'
-    accesses: 103138
-    title: Lucifer_(religie)
-  - id: '9744128'
-    accesses: 103156
-    title: Black_Adam_(Film)
-  - id: '95789'
-    accesses: 103158
-    title: Sofia_Coppola
-  - id: '13399926'
-    accesses: 103170
-    title: Liste_der_Mitglieder_des_Deutschen_Bundestages_(21._Wahlperiode)
-  - id: '7376754'
-    accesses: 103180
-    title: Jan-Lennard_Struff
-  - id: '1333214'
-    accesses: 103186
-    title: Amadeu_Antonio_Stiftung
-  - id: '204314'
-    accesses: 103186
-    title: Kurt_Felix
-  - id: '242069'
-    accesses: 103188
-    title: Peter_Schilling
-- lang: en
+  - pageviews: 958845
+    page_id: 1016501
+    page_title: null
+  - pageviews: 961375
+    page_id: 9852255
+    page_title: null
+  - pageviews: 1001225
+    page_id: 187029
+    page_title: null
+  - pageviews: 1020173
+    page_id: 843545
+    page_title: null
+  - pageviews: 1165601
+    page_id: 2459308
+    page_title: null
+  - pageviews: 1309952
+    page_id: 11670
+    page_title: null
+  - pageviews: 1923296
+    page_id: 1304591
+    page_title: null
+  - pageviews: 2194371
+    page_id: 8360319
+    page_title: null
+  - pageviews: 4364936
+    page_id: 3242193
+    page_title: null
+  - pageviews: 20054092
+    page_id: 9587814
+    page_title: null
+- wiki_db: dewiki
   items:
-  - id: '31008752'
-    accesses: 822534
-    title: not_found
-  - id: '28027246'
-    accesses: 822546
-    title: Luca_Guadagnino
-  - id: '32314211'
-    accesses: 822576
-    title: World_War_Z_(film)
-  - id: '68929059'
-    accesses: 822746
-    title: Guy_Ritchie's_The_Covenant
-  - id: '55323243'
-    accesses: 822777
-    title: Meg_Donnelly
-  - id: '2645394'
-    accesses: 822897
-    title: Alexa_Ray_Joel
-  - id: '206996'
-    accesses: 822930
-    title: Twiggy
-  - id: '25679'
-    accesses: 822955
-    title: Пикассо,_Пабло
-  - id: '371685'
-    accesses: 822965
-    title: James_May
-  - id: '42172'
-    accesses: 823009
-    title: Walter_Mondale
-- lang: ar
+  - pageviews: 2463712
+    page_id: 2401384
+    page_title: null
+  - pageviews: 2870843
+    page_id: 8454474
+    page_title: null
+  - pageviews: 2989723
+    page_id: 303164
+    page_title: null
+  - pageviews: 2996862
+    page_id: 10180837
+    page_title: null
+  - pageviews: 3168015
+    page_id: 9708
+    page_title: null
+  - pageviews: 3574473
+    page_id: 9716234
+    page_title: null
+  - pageviews: 3684264
+    page_id: 1497705
+    page_title: null
+  - pageviews: 3888079
+    page_id: 12471075
+    page_title: null
+  - pageviews: 4437276
+    page_id: 13330375
+    page_title: null
+  - pageviews: 9043675
+    page_id: 7943739
+    page_title: null
+- wiki_db: enwiki
   items:
-  - id: '162371'
-    accesses: 26487
-    title: not_found
-  - id: '935504'
-    accesses: 26487
-    title: not_found
-  - id: '204236'
-    accesses: 26489
-    title: راديكالية
-  - id: '57849'
-    accesses: 26490
-    title: مصر_للطيران
-  - id: '138295'
-    accesses: 26490
-    title: مطر
-  - id: '3213633'
-    accesses: 26498
-    title: أحمد_الخالد_الصباح
-  - id: '2552118'
-    accesses: 26499
-    title: أحمد_عسيري_(عسكري)
-  - id: '9832473'
-    accesses: 26503
-    title: نعمت_عون
-  - id: '26536'
-    accesses: 26504
-    title: الزقازيق
-  - id: '462132'
-    accesses: 26505
-    title: بشار_إسماعيل
-- lang: sv
+  - pageviews: 21405137
+    page_id: 54520372
+    page_title: null
+  - pageviews: 26608989
+    page_id: 4848272
+    page_title: null
+  - pageviews: 32323444
+    page_id: 71376
+    page_title: null
+  - pageviews: 36785423
+    page_id: 19133401
+    page_title: null
+  - pageviews: 43316310
+    page_id: 72417803
+    page_title: null
+  - pageviews: 45533300
+    page_id: 53245776
+    page_title: null
+  - pageviews: 47249248
+    page_id: 574533
+    page_title: null
+  - pageviews: 48961108
+    page_id: 75715266
+    page_title: null
+  - pageviews: 59634718
+    page_id: 44534
+    page_title: null
+  - pageviews: 2044962506
+    page_id: 15580374
+    page_title: null
+- wiki_db: itwiki
   items:
-  - id: '342399'
-    accesses: 12316
-    title: Faith_Hill
-  - id: '231908'
-    accesses: 12316
-    title: Bengt_Magnusson_(journalist)
-  - id: '952241'
-    accesses: 12316
-    title: ETC_(tidskrift)
-  - id: '719617'
-    accesses: 12319
-    title: Baobab
-  - id: '20208'
-    accesses: 12320
-    title: Arn_Magnusson
-  - id: '115097'
-    accesses: 12320
-    title: Sydtyrolen
-  - id: '8832704'
-    accesses: 12320
-    title: Monica_Jusu_Bah
-  - id: '3875406'
-    accesses: 12321
-    title: Lorde
-  - id: '1615'
-    accesses: 12321
-    title: Sociologi
-  - id: '245694'
-    accesses: 12325
-    title: Nick_Carter_(musiker)
-- lang: fr
+  - pageviews: 1853148
+    page_id: 5540687
+    page_title: null
+  - pageviews: 1973580
+    page_id: 596234
+    page_title: null
+  - pageviews: 2060399
+    page_id: 9592619
+    page_title: null
+  - pageviews: 2276637
+    page_id: 1688
+    page_title: null
+  - pageviews: 2603784
+    page_id: 8306303
+    page_title: null
+  - pageviews: 2740382
+    page_id: 1935517
+    page_title: null
+  - pageviews: 3102865
+    page_id: 693092
+    page_title: null
+  - pageviews: 3855081
+    page_id: 7831208
+    page_title: null
+  - pageviews: 4139047
+    page_id: 8886387
+    page_title: null
+  - pageviews: 75503525
+    page_id: 521472
+    page_title: null
+- wiki_db: nlwiki
   items:
-  - id: '455523'
-    accesses: 91562
-    title: not_found
-  - id: '1031'
-    accesses: 91579
-    title: Epifanía
-  - id: '432671'
-    accesses: 91587
-    title: Exécution_de_Louis_XVI
-  - id: '10092095'
-    accesses: 91596
-    title: RS-28_Sarmat
-  - id: '205679'
-    accesses: 91598
-    title: Arthur_H
-  - id: '274358'
-    accesses: 91600
-    title: Béluga_(cétacé)
-  - id: '11809284'
-    accesses: 91609
-    title: Alexandria_Ocasio-Cortez
-  - id: '1892061'
-    accesses: 91615
-    title: Wicked_(comédie_musicale)
-  - id: '42717'
-    accesses: 91620
-    title: Jimmy_Page
-  - id: '13354034'
-    accesses: 91635
-    title: Œuf_parfait
-- lang: pl
+  - pageviews: 468199
+    page_id: 4013091
+    page_title: null
+  - pageviews: 472008
+    page_id: 1041
+    page_title: null
+  - pageviews: 525952
+    page_id: 52648
+    page_title: null
+  - pageviews: 540107
+    page_id: 5866425
+    page_title: null
+  - pageviews: 638290
+    page_id: 4797135
+    page_title: null
+  - pageviews: 676074
+    page_id: 1146
+    page_title: null
+  - pageviews: 734039
+    page_id: 109099
+    page_title: null
+  - pageviews: 1127493
+    page_id: 578940
+    page_title: null
+  - pageviews: 2067415
+    page_id: 5710983
+    page_title: null
+  - pageviews: 28188104
+    page_id: 5905128
+    page_title: null
+- wiki_db: svwiki
   items:
-  - id: '830821'
-    accesses: 34620
-    title: Andrzej_Nardelli
-  - id: '505915'
-    accesses: 34620
-    title: Krzysztof_Daukszewicz
-  - id: '239342'
-    accesses: 34623
-    title: Maślak_pstry
-  - id: '464170'
-    accesses: 34630
-    title: Cindy_Crawford
-  - id: '2485'
-    accesses: 34630
-    title: Język_japoński
-  - id: '130976'
-    accesses: 34633
-    title: Brzeziny
-  - id: '1349112'
-    accesses: 34639
-    title: Konopielka_(film)
-  - id: '51595'
-    accesses: 34643
-    title: Goczałkowice-Zdrój
-  - id: '1583521'
-    accesses: 34643
-    title: Kia_Optima
-  - id: '629461'
-    accesses: 34645
-    title: Dildo_(erotyka)
-- lang: nl
+  - pageviews: 304681
+    page_id: 4989020
+    page_title: null
+  - pageviews: 307994
+    page_id: 8906396
+    page_title: null
+  - pageviews: 308042
+    page_id: 8690340
+    page_title: null
+  - pageviews: 336112
+    page_id: 8881151
+    page_title: null
+  - pageviews: 337199
+    page_id: 82549
+    page_title: null
+  - pageviews: 353608
+    page_id: 101765
+    page_title: null
+  - pageviews: 362854
+    page_id: 4906099
+    page_title: null
+  - pageviews: 525510
+    page_id: 724175
+    page_title: null
+  - pageviews: 531057
+    page_id: 150586
+    page_title: null
+  - pageviews: 542865
+    page_id: 6466
+    page_title: null
+- wiki_db: eswiki
   items:
-  - id: '77301'
-    accesses: 18812
-    title: not_found
-  - id: '1225359'
-    accesses: 18814
-    title: Michelle_Obama
-  - id: '430397'
-    accesses: 18816
-    title: Tonsillitis
-  - id: '592426'
-    accesses: 18817
-    title: Johan_Heldenbergh
-  - id: '1617105'
-    accesses: 18818
-    title: Romeinse_Republiek
-  - id: '3967702'
-    accesses: 18820
-    title: Rúben_Amorim
-  - id: '8386'
-    accesses: 18820
-    title: Pegasus_(mythologie)
-  - id: '56763'
-    accesses: 18820
-    title: Kievit
-  - id: '11310'
-    accesses: 18823
-    title: Aartsbisschop
-  - id: '26407'
-    accesses: 18824
-    title: Hellenisme
-- lang: it
+  - pageviews: 3287791
+    page_id: 278321
+    page_title: null
+  - pageviews: 3331142
+    page_id: 717841
+    page_title: null
+  - pageviews: 3703694
+    page_id: 2797
+    page_title: null
+  - pageviews: 4108988
+    page_id: 1979108
+    page_title: null
+  - pageviews: 4523804
+    page_id: 10410252
+    page_title: null
+  - pageviews: 4835330
+    page_id: 5688790
+    page_title: null
+  - pageviews: 4889257
+    page_id: 34818
+    page_title: null
+  - pageviews: 5511679
+    page_id: 2843464
+    page_title: null
+  - pageviews: 7001343
+    page_id: 593110
+    page_title: null
+  - pageviews: 16277617
+    page_id: 5121987
+    page_title: null
+- wiki_db: plwiki
   items:
-  - id: '96928'
-    accesses: 70705
-    title: not_found
-  - id: '77969'
-    accesses: 70706
-    title: Caso_Edgardo_Mortara
-  - id: '1748338'
-    accesses: 70714
-    title: Raiz
-  - id: '1878557'
-    accesses: 70715
-    title: Feijoa_sellowiana
-  - id: '2544271'
-    accesses: 70718
-    title: Aldo_Busi
-  - id: '482970'
-    accesses: 70719
-    title: Daniel_Osvaldo
-  - id: '1266581'
-    accesses: 70719
-    title: Saverio_Costanzo
-  - id: '76356'
-    accesses: 70721
-    title: Associazione_Sportiva_Volley_Lube
-  - id: '313644'
-    accesses: 70724
-    title: Gruppo_Bilderberg
-  - id: '7044276'
-    accesses: 70733
-    title: Cyberpunk_2077
-- lang: es
+  - pageviews: 1259579
+    page_id: 1706242
+    page_title: null
+  - pageviews: 1279347
+    page_id: 19413
+    page_title: null
+  - pageviews: 1349613
+    page_id: 16943
+    page_title: null
+  - pageviews: 1368896
+    page_id: 143139
+    page_title: null
+  - pageviews: 1404570
+    page_id: 5009527
+    page_title: null
+  - pageviews: 1716658
+    page_id: 44895
+    page_title: null
+  - pageviews: 1721684
+    page_id: 5883750
+    page_title: null
+  - pageviews: 1957485
+    page_id: 4858156
+    page_title: null
+  - pageviews: 3032053
+    page_id: 94705
+    page_title: null
+  - pageviews: 3063670
+    page_id: 3213866
+    page_title: null
+- wiki_db: frwiki
   items:
-  - id: '378351'
-    accesses: 99083
-    title: not_found
-  - id: '63421'
-    accesses: 99084
-    title: María_Teresa_de_Austria_(1638-1683)
-  - id: '4520797'
-    accesses: 99094
-    title: Horacio_Pagani_(empresario)
-  - id: '8323722'
-    accesses: 99101
-    title: Armand_Duplantis
-  - id: '10110283'
-    accesses: 99107
-    title: Gobierno_de_Gabriel_Boric
-  - id: '9804127'
-    accesses: 99112
-    title: Samantha_Hudson
-  - id: '8549987'
-    accesses: 99115
-    title: Glass_(película)
-  - id: '3804'
-    accesses: 99118
-    title: Rafael_Alberti
-  - id: '401531'
-    accesses: 99121
-    title: Jesús_Navas
-  - id: '885361'
-    accesses: 99128
-    title: Folivora
+  - pageviews: 2597371
+    page_id: 12883707
+    page_title: null
+  - pageviews: 2601869
+    page_id: 1095
+    page_title: null
+  - pageviews: 2663116
+    page_id: 15124130
+    page_title: null
+  - pageviews: 2774176
+    page_id: 15336720
+    page_title: null
+  - pageviews: 2916433
+    page_id: 624301
+    page_title: null
+  - pageviews: 3682382
+    page_id: 9003404
+    page_title: null
+  - pageviews: 3787227
+    page_id: 574955
+    page_title: null
+  - pageviews: 4065548
+    page_id: 44101
+    page_title: null
+  - pageviews: 4449823
+    page_id: 360244
+    page_title: null
+  - pageviews: 224738952
+    page_id: 20446
+    page_title: null
