@@ -79,8 +79,8 @@ def export_results(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
 # ─────────────────────────────────────────────
 
 if __name__ == "__main__":
-    ENTITY_LIST_PATH = r"C:\Users\lmlin\Desktop\DataFest\datafest\bots\entity_list.json"
-    DATA_DIR         = r"C:\Users\lmlin\Desktop\DataFest\datafest\data"
+    ENTITY_LIST_PATH = r"../entity_list.json"
+    DATA_DIR         = r"../../data"
 
     print("Loading entity list...")
     entity_list = load_entity_list(ENTITY_LIST_PATH)

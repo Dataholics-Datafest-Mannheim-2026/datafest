@@ -1,3 +1,6 @@
+import glob
+import os
+import pydantic
 import polars as pl
 import pandas as pd
 import json
@@ -28,18 +31,16 @@ def load_entity_list(path: str) -> list:
         return list(data.values())
     return data
 
-
 def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:
     """Load is_bot ground truth from all available language editions."""
     dfs = []
-    for lang in ALL_LANGUAGES:
-        path = Path(data_dir) / f"{lang}wiki.json.gz"
-        if not path.exists():
-            print(f"  Skipping {lang}wiki – file not found")
-            continue
-        print(f"  Loading {lang}wiki...")
-        df = pl.read_ndjson(path).select(["user_text", "is_bot"])
-        dfs.append(df)
+    for root, dirs, files in os.walk(data_dir):
+        for file in files:
+            if file.endswith(".json.gz"):
+                path = Path(root) / file
+                print(f"  Loading {file}...")
+                df = pd.read_json(path, lines=True).select(["user_text", "is_bot"]).reset_index(drop=True)
+                dfs.append(df)
 
     if not dfs:
         raise FileNotFoundError(f"No language files found in {data_dir}")
@@ -49,7 +50,6 @@ def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:
         .group_by("user_text")
         .agg(pl.col("is_bot").max().alias("is_bot"))
     )
-
 
 # ─────────────────────────────────────────────
 # FEATURE ENGINEERING
