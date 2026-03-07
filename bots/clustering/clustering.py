@@ -1,0 +1,256 @@
+import polars as pl
+import json
+import numpy as np
+from pathlib import Path
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+# ─────────────────────────────────────────────
+# 1. LOAD DATA
+# ─────────────────────────────────────────────
+
+ALL_LANGUAGES = ["ar", "de", "en", "es", "fr", "it", "nl", "pl", "ru", "sv"]
+
+
+def load_entity_list(path: str) -> list:
+    """Load the precomputed feature JSON."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
+
+def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:
+    """Load is_bot ground truth from all available language editions and combine."""
+    dfs = []
+    for lang in ALL_LANGUAGES:
+        path = Path(data_dir) / f"{lang}wiki.json.gz"
+        if not path.exists():
+            print(f"  Skipping {lang}wiki – file not found")
+            continue
+        print(f"  Loading {lang}wiki...")
+        df = pl.read_ndjson(path).select(["user_text", "is_bot"])
+        dfs.append(df)
+
+    if not dfs:
+        raise FileNotFoundError(f"No language files found in {data_dir}")
+
+    combined = pl.concat(dfs)
+    # A user is flagged as bot if marked as bot in ANY language edition
+    return (
+        combined
+        .group_by("user_text")
+        .agg(pl.col("is_bot").max().alias("is_bot"))
+    )
+
+
+# ─────────────────────────────────────────────
+# 2. FEATURE ENGINEERING
+# ─────────────────────────────────────────────
+
+def aggregate_edits_per_day(edits_per_day: list) -> dict:
+    """Flatten list of {day: count} dicts into aggregate stats."""
+    counts = []
+    for d in edits_per_day:
+        if d is not None:
+            counts.extend(d.values())
+    counts = [c for c in counts if c is not None]
+    if not counts:
+        return {"avg_edits_per_day": 0, "std_edits_per_day": 0,
+                "max_edits_per_day": 0, "active_days": 0}
+    return {
+        "avg_edits_per_day": float(np.mean(counts)),
+        "std_edits_per_day": float(np.std(counts)),
+        "max_edits_per_day": float(np.max(counts)),
+        "active_days":       int(len(counts)),
+    }
+
+
+def aggregate_revision_tags(revision_tags: list, all_tags: set) -> dict:
+    """Convert tag counts to percentages, one column per tag."""
+    merged = {}
+    for d in revision_tags:
+        if d:
+            for k, v in d.items():
+                merged[k] = merged.get(k, 0) + v
+    total = sum(merged.values()) or 1
+    return {f"pct_tag_{tag}": merged.get(tag, 0) / total for tag in all_tags}
+
+
+def collect_all_tags(entity_list: list) -> set:
+    """Find every unique revision tag across all users."""
+    tags = set()
+    for user in entity_list:
+        for d in user.get("revision_tags", []):
+            if d:
+                tags.update(d.keys())
+    return tags
+
+
+def build_feature_matrix(entity_list: list, is_bot_df: pl.DataFrame) -> pl.DataFrame:
+    """Build a flat feature DataFrame ready for PCA."""
+    all_tags = collect_all_tags(entity_list)
+
+    is_bot_lookup = dict(
+        zip(is_bot_df["user_text"].to_list(), is_bot_df["is_bot"].to_list())
+    )
+
+    rows = []
+    for user in entity_list:
+        row = {
+            "user_text": user["user_text"],
+            "is_bot":    bool(is_bot_lookup.get(user["user_text"], False)),
+            # Scalar features
+            "avg_revision_comment_length":  user.get("avg_revision_comment_length", 0) or 0,
+            "avg_edit_hours":               user.get("avg_edit_hours", 0) or 0,
+            "total_edits":                  user.get("total_edits", 0) or 0,
+            "pct_of_reverted_edits":        user.get("pct_of_reverted_edits", 0) or 0,
+            "pct_of_reverting_edits":       user.get("pct_of_reverting_edits", 0) or 0,
+            "unique_edited_articles":       user.get("unique_edited_articels", 0) or 0,
+            "unique_edited_languages":      user.get("unique_edited_languages", 0) or 0,
+            "median_seconds_between_edits": user.get("median_seconds_between_edits", 0) or 0,
+        }
+        row.update(aggregate_edits_per_day(user.get("edits_per_day", [])))
+        row.update(aggregate_revision_tags(user.get("revision_tags", []), all_tags))
+        rows.append(row)
+
+    return pl.DataFrame(rows)
+
+
+# ─────────────────────────────────────────────
+# 3. PCA + CLUSTERING
+# ─────────────────────────────────────────────
+
+def run_pipeline(feature_df: pl.DataFrame):
+    meta_cols    = ["user_text", "is_bot"]
+    feature_cols = [c for c in feature_df.columns if c not in meta_cols]
+
+    X = feature_df.select(feature_cols).to_numpy().astype(float)
+    X = np.nan_to_num(X)
+
+    scaler   = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    pca   = PCA(n_components=2, random_state=42)
+    X_pca = pca.fit_transform(X_scaled)
+
+    print(f"PCA explained variance: PC1={pca.explained_variance_ratio_[0]:.1%}, "
+          f"PC2={pca.explained_variance_ratio_[1]:.1%}")
+
+    kmeans         = KMeans(n_clusters=2, random_state=42, n_init=10)
+    cluster_labels = kmeans.fit_predict(X_pca)
+
+    return X_pca, cluster_labels, pca
+
+
+def label_clusters(feature_df: pl.DataFrame, cluster_labels: np.ndarray) -> int:
+    """Use is_bot ground truth to decide which cluster = bot cluster."""
+    is_bot    = feature_df["is_bot"].to_numpy()
+    bot_ratio = {}
+    for c in [0, 1]:
+        mask          = cluster_labels == c
+        ratio         = is_bot[mask].mean() if mask.sum() > 0 else 0
+        bot_ratio[c]  = ratio
+        print(f"  Cluster {c}: {mask.sum()} users, {ratio:.1%} known bots")
+
+    bot_cluster  = max(bot_ratio, key=bot_ratio.get)
+    user_cluster = 1 - bot_cluster
+    print(f"\n→ Cluster {bot_cluster} = BOT,  Cluster {user_cluster} = USER")
+    return bot_cluster
+
+
+# ─────────────────────────────────────────────
+# 4. VISUALISATION
+# ─────────────────────────────────────────────
+
+def plot_results(X_pca, cluster_labels, is_bot, bot_cluster, pca,
+                 output_path="bot_detection_plot.png"):
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    colors = {
+        "user_pred": "#4C9BE8",
+        "bot_pred":  "#E8624C",
+        "known_bot": "#1a1a1a",
+    }
+
+    user_mask  = cluster_labels != bot_cluster
+    bot_mask   = cluster_labels == bot_cluster
+    known_mask = np.array(is_bot, dtype=bool)
+
+    ax.scatter(X_pca[user_mask, 0],  X_pca[user_mask, 1],
+               c=colors["user_pred"], alpha=0.5, s=20, label="Predicted: User")
+    ax.scatter(X_pca[bot_mask, 0],   X_pca[bot_mask, 1],
+               c=colors["bot_pred"],  alpha=0.5, s=20, label="Predicted: Bot")
+    ax.scatter(X_pca[known_mask, 0], X_pca[known_mask, 1],
+               c=colors["known_bot"], marker="x", s=60, linewidths=1.5,
+               label="Known Bot (is_bot=True)")
+
+    ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)")
+    ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)")
+    ax.set_title("Bot Detection via PCA + KMeans\n(black ✕ = confirmed bots)")
+    ax.legend(loc="upper right")
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    print(f"\nPlot saved to {output_path}")
+    plt.show()
+
+
+# ─────────────────────────────────────────────
+# 5. EXPORT RESULTS
+# ─────────────────────────────────────────────
+
+def export_results(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
+                   bot_cluster: int, output_path="bot_detection_results.csv"):
+    result = feature_df.select(["user_text", "is_bot"]).with_columns([
+        pl.Series("cluster", cluster_labels),
+        pl.Series("predicted_label", [
+            "undetected_bot" if (c == bot_cluster and not b)
+            else "known_bot" if b
+            else "user"
+            for c, b in zip(cluster_labels, feature_df["is_bot"].to_list())
+        ])
+    ])
+    result.write_csv(output_path)
+    print(f"Results saved to {output_path}")
+    print("\n── Summary ──────────────────────────────")
+    print(result.group_by("predicted_label").len().sort("predicted_label"))
+    return result
+
+
+# ─────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────
+
+if __name__ == "__main__":
+    # ── Paths – adjust as needed ──────────────
+    ENTITY_LIST_PATH = r"C:\Users\lmlin\Desktop\DataFest\datafest\bots\entity_list.json"
+    DATA_DIR         = r"C:\Users\lmlin\Desktop\DataFest\datafest\data"
+    # ──────────────────────────────────────────
+
+    print("Loading entity list...")
+    entity_list = load_entity_list(ENTITY_LIST_PATH)
+    print(f"  {len(entity_list)} users loaded")
+    print(f"  Sample usernames: {[u['user_text'] for u in entity_list[:3]]}")
+
+    print("\nLoading is_bot from all language editions...")
+    is_bot_df = load_is_bot_all_languages(DATA_DIR)
+    print(f"  {len(is_bot_df)} unique users found")
+    print(f"  Known bots: {is_bot_df['is_bot'].sum()}")
+
+    print("\nBuilding feature matrix...")
+    feature_df = build_feature_matrix(entity_list, is_bot_df)
+    print(f"  {len(feature_df)} users, {len(feature_df.columns) - 2} features")
+
+    print("\nRunning PCA + KMeans...")
+    X_pca, cluster_labels, pca = run_pipeline(feature_df)
+
+    print("\nLabelling clusters via ground truth:")
+    bot_cluster = label_clusters(feature_df, cluster_labels)
+
+    print("\nPlotting...")
+    plot_results(X_pca, cluster_labels, feature_df["is_bot"].to_list(),
+                 bot_cluster, pca)
+
+    print("\nExporting results...")
+    export_results(feature_df, cluster_labels, bot_cluster)
