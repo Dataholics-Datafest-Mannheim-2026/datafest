@@ -142,7 +142,7 @@ ax.set_ylabel("Edits per day")
 ax.set_title("FIG T1 — Daily Edit Volume Across All Languages (2025)\n"
              "Bots contribute consistently; humans drive the bulk and seasonal swings")
 ax.legend(loc="upper right")
-save(fig, "T1_daily_volume")
+save(fig, "temporal_visualizations_T1_daily_volume")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -172,7 +172,7 @@ ax.set_ylabel("Bot share of all edits")
 ax.set_title("FIG T2 — Bot Share of All Edits Over Time (Global, 2025)\n"
              "Is automation's role in Wikipedia growing or stable?")
 ax.legend(loc="upper right")
-save(fig, "T2_global_bot_share")
+save(fig, "temporal_visualizations_T2_global_bot_share")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -217,7 +217,7 @@ fig.suptitle("FIG T3 — Bot Share per Language (2025)\n"
              f"{ROLLING_WINDOW}-day rolling avg  |  dashed = year mean",
              fontsize=13, fontweight="bold", y=1.01)
 fig.tight_layout()
-save(fig, "T3_bot_share_per_language")
+save(fig, "temporal_visualizations_T3_bot_share_per_language")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -254,7 +254,7 @@ ax.set_ylabel("Bot share of that edit type")
 ax.set_title("FIG T4 — Bot Share by Edit Category (Global, 2025)\n"
              f"Which types of edits are bots dominating?  ({ROLLING_WINDOW}-day rolling avg)")
 ax.legend(loc="right", framealpha=0.9)
-save(fig, "T4_bot_share_by_category")
+save(fig, "temporal_visualizations_T4_bot_share_by_category")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -305,7 +305,7 @@ ax.set_xticklabels(list(month_starts.values()))
 ax.set_xlabel("Week of 2025")
 ax.set_title("FIG T5 — Bot Share Heatmap: Language × Week (2025)\n"
              "Darker red = higher bot share that week in that language")
-save(fig, "T5_heatmap_language_week")
+save(fig, "temporal_visualizations_T5_heatmap_language_week")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -350,7 +350,7 @@ fig.suptitle("FIG T6 — Unique Editors per Day by Language (2025)\n"
              f"({ROLLING_WINDOW}-day rolling avg)",
              fontsize=13, fontweight="bold", y=1.01)
 fig.tight_layout()
-save(fig, "T6_unique_editors_per_language")
+save(fig, "temporal_visualizations_T6_unique_editors_per_language")
 
 
 # ── LOAD TOPIC DATA ───────────────────────────────────────────────────────────
@@ -406,7 +406,7 @@ else:
     ax.set_title("FIG T7 — Bot Share by Topic Focus (Global, 2025)\n"
                  f"Which subject areas do bots dominate?  ({ROLLING_WINDOW}-day rolling avg)")
     ax.legend(loc="right", framealpha=0.9)
-    save(fig, "T7_bot_share_by_topic")
+    save(fig, "temporal_visualizations_T7_bot_share_by_topic")
 
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -457,7 +457,7 @@ else:
                  f"({ROLLING_WINDOW}-day rolling avg)",
                  fontsize=13, fontweight="bold", y=1.01)
     fig.tight_layout()
-    save(fig, "T8_bot_share_by_topic_per_language")
+    save(fig, "temporal_visualizations_T8_bot_share_by_topic_per_language")
 
 
-print(f"\nDone. {len(list(OUTPUT_DIR.glob('T*.png')))} temporal figures saved to: {OUTPUT_DIR}")
+print(f"\nDone. {len(list(OUTPUT_DIR.glob('temporal_visualizations_T*.png')))} temporal figures saved to: {OUTPUT_DIR}")

@@ -2,7 +2,7 @@
 DataFest 2026 — Step 5: Analysis & Visualizations
 Topic: Bots as Wikipedia Editors
 
-Loads accounts_master.ndjson and produces 8 presentation-ready figures.
+Loads accounts_master.ndjson and produces presentation-ready figures.
 Each figure is saved individually to bot_analysis_jona/figures/ as a PNG (150 dpi)
 so you can drag-and-drop them straight into your slide deck.
 
@@ -132,7 +132,7 @@ ax.set_ylabel("Avg. words changed per edit")
 ax.set_title("FIG 01 — Behavioral Fingerprint: Bots vs Humans\n"
              "Bots cluster top-left: fast edits, little text changed each time")
 ax.legend(loc="upper right")
-save(fig, "01_behavioral_fingerprint")
+save(fig, "visualizations_01_behavioral_fingerprint")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -186,7 +186,7 @@ ax.set_title("FIG 02 — What Bots Do vs What Humans Do\n"
              "Bots specialise in references & templates; humans write text")
 ax.legend()
 ax.set_ylim(0, max(max(bot_pcts), max(human_pcts)) * 1.18)
-save(fig, "02_primary_edit_type")
+save(fig, "visualizations_02_primary_edit_type")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -215,7 +215,7 @@ ax.set_ylabel("Density")
 ax.set_title("FIG 03 — Edit Velocity Distribution\n"
              "Bots edit orders of magnitude faster than humans")
 ax.legend()
-save(fig, "03_velocity_distribution")
+save(fig, "visualizations_03_velocity_distribution")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -268,7 +268,7 @@ ax.set_ylabel("Cumulative fraction of total edits")
 ax.set_title("FIG 04 — Edit Concentration (Lorenz Curve)\n"
              "A tiny minority of accounts produce the vast majority of edits")
 ax.legend(loc="upper left")
-save(fig, "04_lorenz_curve")
+save(fig, "visualizations_04_lorenz_curve")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -318,7 +318,7 @@ ax2.set_title("Humans by language reach")
 
 fig.suptitle("FIG 05 — Multilingual Reach: How many wikis does each account touch?",
              fontsize=13, fontweight="bold", y=1.02)
-save(fig, "05_multilingual_reach")
+save(fig, "visualizations_05_multilingual_reach")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -379,7 +379,7 @@ for row_idx in range(1, len(rows) + 1):
 
 ax.set_title("FIG 06 — Top 20 Most Active Bots", fontsize=13, fontweight="bold",
              pad=12, loc="left")
-save(fig, "06_top20_bots_table")
+save(fig, "visualizations_06_top20_bots_table")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -427,7 +427,7 @@ ax.set_xlabel("% of accounts whose most-edited topic is this category")
 ax.set_title("FIG 07 — Topic Focus: Bots vs Humans\n"
              "Do bots concentrate in specific knowledge domains?")
 ax.legend()
-save(fig, "07_topic_distribution")
+save(fig, "visualizations_07_topic_distribution")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -479,7 +479,7 @@ ax.set_ylabel("% of accounts in this bucket")
 ax.set_title(f"FIG 08 — Edit Quality: How Often Are Edits Reverted?\n"
              f"Accounts with ≥{min_edits} edits only")
 ax.legend()
-save(fig, "08_reverted_rate")
+save(fig, "visualizations_08_reverted_rate")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -537,7 +537,7 @@ ax.set_title(f"FIG 09 — Bot-like Humans: Unflagged Automation?\n"
              f"{len(suspect):,} human accounts average >20 edits/day "
              f"({len(suspect)/n_humans*100:.2f}% of all humans)")
 ax.legend(loc="upper right")
-save(fig, "09_botlike_humans")
+save(fig, "visualizations_09_botlike_humans")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -617,7 +617,7 @@ ax.set_title(
 
 # Adjust legend to show the categories clearly
 ax.legend(loc="upper right", markerscale=1.5)
-save(fig, "10_velocity_vs_active_days")
+save(fig, "visualizations_10_velocity_vs_active_days")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -692,4 +692,74 @@ ax.set_title(
     f"Bots: {len(heavy_b):,} ({len(heavy_b)/len(plot_bots)*100:.2f}% of bots)"
 )
 ax.legend(loc="upper right", markerscale=1.5)
-save(fig, "11_heavily_reverted")
+save(fig, "visualizations_11_heavily_reverted")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FIG 12 — Editing rhythm: average time between consecutive edits
+# ──────────────────────────────────────────────────────────────────────────────
+# For each account we compute the mean gap (in hours) between every pair of
+# consecutive edits, sorted by timestamp across all languages.
+# Accounts with only 1 edit are excluded (no pairs to measure).
+#
+# Hypothesis: bots edit in rapid bursts → very short inter-edit gaps.
+# Humans tend to edit sporadically → much longer average gaps.
+# ══════════════════════════════════════════════════════════════════════════════
+print("FIG 12: Avg time between edits (Bots vs Humans box plot)...")
+
+b_gap = bots.filter(pl.col("avg_hours_between_edits").is_not_null())["avg_hours_between_edits"].to_numpy()
+h_gap = humans.filter(pl.col("avg_hours_between_edits").is_not_null())["avg_hours_between_edits"].to_numpy()
+
+fig, ax = plt.subplots(figsize=(8, 6))
+
+bp = ax.boxplot(
+    [np.log1p(h_gap), np.log1p(b_gap)],
+    patch_artist=True,
+    medianprops=dict(color="white", linewidth=2.5),
+    whiskerprops=dict(linewidth=1.2),
+    capprops=dict(linewidth=1.2),
+    flierprops=dict(marker=".", markersize=2, alpha=0.25, linestyle="none"),
+    widths=0.5,
+)
+bp["boxes"][0].set_facecolor(HUMAN_COLOR)
+bp["boxes"][0].set_alpha(0.85)
+bp["boxes"][1].set_facecolor(BOT_COLOR)
+bp["boxes"][1].set_alpha(0.85)
+
+tick_vals = [0, 0.5, 2, 12, 48, 168, 720, 4320]  # hours: 0, 30min, 2h, 12h, 2d, 1w, 1mo, 6mo
+ax.set_yticks(np.log1p(tick_vals))
+ax.set_yticklabels(["0", "30 min", "2 h", "12 h", "2 days", "1 week", "1 month", "6 months"])
+ax.set_xticks([1, 2])
+ax.set_xticklabels([f"Humans\n(n={len(h_gap):,})", f"Bots\n(n={len(b_gap):,})"], fontsize=11)
+ax.set_ylabel("Avg. time between consecutive edits (log scale)")
+ax.set_title(
+    "FIG 12 — Editing Rhythm: Avg. Time Between Consecutive Edits\n"
+    "Bots vs Humans — accounts with ≥2 edits only"
+)
+
+# Add mean marker + annotated arrow for each group
+def fmt_hours(h):
+    if h < 1:       return f"{h*60:.0f} min"
+    if h < 24:      return f"{h:.1f} h"
+    if h < 168:     return f"{h/24:.1f} days"
+    if h < 720:     return f"{h/168:.1f} weeks"
+    return f"{h/720:.1f} months"
+
+for x_pos, arr in [(1, h_gap), (2, b_gap)]:
+    mean_val = arr.mean()
+    mean_log = np.log1p(mean_val)
+    # White diamond marker at the mean position
+    ax.scatter(x_pos, mean_log, marker="D", s=50, color="white",
+               edgecolors="#333333", linewidths=1.5, zorder=5)
+    # Arrow pointing from label to the diamond
+    ax.annotate(
+        f"mean: {fmt_hours(mean_val)}",
+        xy=(x_pos + 0.27, mean_log),
+        xytext=(x_pos + 0.58, mean_log),
+        fontsize=9, va="center", color="#333333",
+        arrowprops=dict(arrowstyle="->", color="#555555", lw=1.0),
+    )
+
+ax.spines[["top", "right"]].set_visible(False)
+fig.tight_layout()
+save(fig, "visualizations_12_editing_rhythm")

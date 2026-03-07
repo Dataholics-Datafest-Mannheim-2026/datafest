@@ -19,10 +19,12 @@ Volume
   unique_pages_touched   distinct page_ids across all languages
 
 Time
-  first_edit             timestamp of earliest edit
-  last_edit              timestamp of latest edit
-  activity_span_days     days between first and last edit (0 = one-day account)
-  edit_velocity          edits per day across activity span (burst indicator)
+  first_edit                  timestamp of earliest edit
+  last_edit                   timestamp of latest edit
+  activity_span_days          days between first and last edit (0 = one-day account)
+  edit_velocity               edits per day across activity span (burst indicator)
+  avg_hours_between_edits     mean gap in hours between consecutive edits (global, sorted)
+                              null for accounts with only 1 edit
 
 Edit character — from parsing edit_types_json with regex
   total_word_inserts     word-level text insertions across all edits
@@ -106,7 +108,8 @@ section("STEP 1: aggregate per language")
 
 per_lang_frames    = []  # one row per (user, language)
 topic_frames       = []  # one row per (user, topic, language) for top_topic
-active_days_frames = []  # NEW: one row per (user, unique_date) per language
+active_days_frames = []  # one row per (user, unique_date) per language
+ts_frames          = []  # all (user_text, ts) pairs for inter-edit interval
 
 for lang in LANGUAGES:
     edits_file = EDITS_DIR / f"{lang}wiki.json.gz"
@@ -135,6 +138,9 @@ for lang in LANGUAGES:
         .unique()
     )
     active_days_frames.append(user_dates)
+
+    # Collect timestamps for global inter-edit interval calculation
+    ts_frames.append(edits.select(["user_text", "ts"]))
     # ──────────────────────────────────────────────────────────────────────────
 
     # ── Edit type features (regex on raw JSON string) ─────────────────────────
@@ -222,6 +228,24 @@ global_active_days = (
     .group_by(["user_text", "is_bot"])
     .agg(pl.len().alias("active_days"))
 )
+
+# ── Calculate Global Inter-Edit Interval ──────────────────────────────────────
+# For each user, sort all edits globally by timestamp, compute consecutive diffs,
+# then average them. Users with only 1 edit get null (no pairs to diff).
+print("  Calculating avg time between edits...")
+avg_gap_df = (
+    pl.concat(ts_frames)
+    .group_by("user_text")
+    .agg(
+        pl.col("ts").sort().diff().dt.total_seconds().drop_nulls().mean()
+        .alias("avg_seconds_between_edits")
+    )
+    .with_columns(
+        (pl.col("avg_seconds_between_edits") / 3600).round(2)
+        .alias("avg_hours_between_edits")
+    )
+    .select(["user_text", "avg_hours_between_edits"])
+)
 # ──────────────────────────────────────────────────────────────────────────────
 
 accounts = (
@@ -248,8 +272,9 @@ accounts = (
     )
 )
 
-# ── NEW: Merge Active Days into Global Accounts ───────────────────────────────
+# ── Merge Active Days & Inter-Edit Interval into Global Accounts ──────────────
 accounts = accounts.join(global_active_days, on=["user_text", "is_bot"], how="left")
+accounts = accounts.join(avg_gap_df, on="user_text", how="left")
 # ──────────────────────────────────────────────────────────────────────────────
 
 print(f"  Unique accounts (global): {accounts.shape[0]:,}")
