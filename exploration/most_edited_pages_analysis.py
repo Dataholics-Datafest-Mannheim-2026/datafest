@@ -177,3 +177,87 @@ df_bot_pages_shares = (
 
 print("-- Share comparison on top bot-edited pages --")
 print(df_bot_pages_shares)
+
+# Topic-level comparison (analogous to pages)
+# 3) For the top-10 human topics:
+#    - share of all human edits that fall on pages with that top topic
+#    - share of all bot edits that fall on pages with that top topic
+#
+# 4) For the top-10 bot topics:
+#    - share of all bot edits that fall on pages with that top topic
+#    - share of all human edits that fall on pages with that top topic
+
+# Reuse df_page_topics_is_human / df_page_topics_is_bot (page -> top-1 topic + edits)
+
+# First, get total edits per topic for humans and bots for ALL topics
+df_topic_totals_human = (
+    df_page_topics_is_human
+    .group_by("topic")
+    .agg(pl.col("num_human_edits").sum().alias("num_human_edits_total"))
+)
+
+df_topic_totals_bot = (
+    df_page_topics_is_bot
+    .group_by("topic")
+    .agg(pl.col("num_bot_edits").sum().alias("num_bot_edits_total"))
+)
+
+total_human_edits_topics = (
+    df_topic_totals_human.select(pl.col("num_human_edits_total").sum())
+    .to_series()[0]
+)
+
+total_bot_edits_topics = (
+    df_topic_totals_bot.select(pl.col("num_bot_edits_total").sum())
+    .to_series()[0]
+)
+
+# 3) Human-centric: top human topics with human & bot shares
+df_human_topics_shares = (
+    df_top_topics_is_human
+    .join(df_topic_totals_bot, on="topic", how="left")
+    .with_columns(
+        pl.col("num_bot_edits_total").fill_null(0)
+    )
+    .with_columns(
+        (pl.col("num_human_edits") / total_human_edits_topics).alias("human_topic_share_all_human_edits"),
+        (pl.col("num_bot_edits_total") / total_bot_edits_topics).alias("bot_topic_share_all_bot_edits"),
+    )
+    .select(
+        [
+            pl.col("topic"),
+            pl.col("num_human_edits"),
+            pl.col("human_topic_share_all_human_edits"),
+            pl.col("num_bot_edits_total").alias("num_bot_edits_on_human_top_topics"),
+            pl.col("bot_topic_share_all_bot_edits"),
+        ]
+    )
+)
+
+print("-- Share comparison on top human topics --")
+print(df_human_topics_shares)
+
+# 4) Bot-centric: top bot topics with bot & human shares
+df_bot_topics_shares = (
+    df_top_topics_is_bot
+    .join(df_topic_totals_human, on="topic", how="left")
+    .with_columns(
+        pl.col("num_human_edits_total").fill_null(0)
+    )
+    .with_columns(
+        (pl.col("num_bot_edits") / total_bot_edits_topics).alias("bot_topic_share_all_bot_edits"),
+        (pl.col("num_human_edits_total") / total_human_edits_topics).alias("human_topic_share_all_human_edits"),
+    )
+    .select(
+        [
+            pl.col("topic"),
+            pl.col("num_bot_edits"),
+            pl.col("bot_topic_share_all_bot_edits"),
+            pl.col("num_human_edits_total").alias("num_human_edits_on_bot_top_topics"),
+            pl.col("human_topic_share_all_human_edits"),
+        ]
+    )
+)
+
+print("-- Share comparison on top bot topics --")
+print(df_bot_topics_shares)
