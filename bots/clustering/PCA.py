@@ -105,7 +105,7 @@ def export_results(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
 
 def export_bot_usernames(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
                           bot_clusters: set,
-                          output_path: str = "bot_usernames.json"):
+                          output_path: str = "bot_usernames_unfiltered.json"):
     """
     Export usernames from bot clusters as JSON.
     Structure: {cluster_id: {"known_bots": [...], "undetected_bots": [...]}}
@@ -151,12 +151,14 @@ def export_bot_usernames(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
 # ─────────────────────────────────────────────
 
 if __name__ == "__main__":
-    ENTITY_LIST_PATH = r"../entity_list.json"
-    DATA_DIR         = r"../../data"
-    N_CLUSTERS = 12   # <- adjust freely
+    ENTITY_LIST_PATH = r"C:\Users\lmlin\Desktop\DataFest\datafest\bots\entity_list.json"
+    DATA_DIR         = r"C:\Users\lmlin\Desktop\DataFest\datafest_old\data"
+    #ENTITY_LIST_PATH = r"../entity_list.json"
+    #DATA_DIR         = r"../../data"
+    N_CLUSTERS = 12
 
     # Override which clusters to export as bots (set to None to use automatic detection)
-    EXPORT_CLUSTERS = {6}   # Manually specify or none
+    EXPORT_CLUSTERS = None   # Manually specify or none
 
     print("Loading entity list...")
     entity_list = load_entity_list(ENTITY_LIST_PATH)
