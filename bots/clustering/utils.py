@@ -18,9 +18,15 @@ ALL_LANGUAGES = ["ar", "de", "en", "es", "fr", "it", "nl", "pl", "ru", "sv"]
 # ─────────────────────────────────────────────
 
 def load_entity_list(path: str) -> list:
-    """Load the precomputed feature JSON."""
+    """Load the precomputed feature JSON.
+    Handles both a list of dicts and a dict-of-dicts (key = username).
+    """
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    # If it's a dict of dicts, convert to list
+    if isinstance(data, dict):
+        return list(data.values())
+    return data
 
 
 def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:
@@ -68,23 +74,31 @@ def aggregate_edits_per_day(edits_per_day: list) -> dict:
 
 
 def aggregate_revision_tags(revision_tags: list, all_tags: set) -> dict:
-    """Convert tag counts to percentages, one column per tag."""
+    """Convert tag counts to percentages, one column per tag.
+    Handles format: [{"tag_name": "mobile_editing", "times_used": 1}, ...]
+    """
     merged = {}
     for d in revision_tags:
-        if d:
-            for k, v in d.items():
-                merged[k] = merged.get(k, 0) + v
+        if d and isinstance(d, dict):
+            tag  = d.get("tag_name")
+            count = d.get("times_used", 1)
+            if tag:
+                merged[tag] = merged.get(tag, 0) + count
     total = sum(merged.values()) or 1
     return {f"pct_tag_{tag}": merged.get(tag, 0) / total for tag in all_tags}
 
 
 def collect_all_tags(entity_list: list) -> set:
-    """Find every unique revision tag across all users."""
+    """Find every unique revision tag across all users.
+    Handles format: [{"tag_name": "mobile_editing", "times_used": 1}, ...]
+    """
     tags = set()
     for user in entity_list:
         for d in user.get("revision_tags", []):
-            if d:
-                tags.update(d.keys())
+            if d and isinstance(d, dict):
+                tag = d.get("tag_name")
+                if tag:
+                    tags.add(tag)
     return tags
 
 
