@@ -59,10 +59,52 @@ df_top_topics_is_bot = (
 print(df_top_topics_is_bot)
 
 print("-- Most edited pages by Humans --")
-# TODO
+df_edits_is_human = (
+    pl.read_ndjson("../data/edit_types/dewiki.json.gz")
+    .filter(pl.col(sety.IS_BOT) == False)
+)
+df_count_is_human = df_edits_is_human.group_by(pl.col(sety.PAGE_ID)).len(sc.NUM_EDITS)
+df_count_topN_is_human = (
+    df_count_is_human.top_k(k=top_k, by=sc.NUM_EDITS).sort(by=sc.NUM_EDITS, descending=True)
+)
+
+# Join on page_id for page_title / predicted labels
+result_is_human = df_count_topN_is_human.join(df_page_info, on=sety.PAGE_ID, how="left")
+
+print(result_is_human.top_k(k=top_k, by=sc.NUM_EDITS))
 
 print("-- Most edited topics by Humans --")
-# TODO
+df_pages_is_human = df_count_is_human.join(
+    df_page_info.select([spi.PAGE_ID, spi.PREDICTED_LABELS]),
+    on=sety.PAGE_ID,
+    how="left",
+)
+
+df_page_topics_is_human = (
+    df_pages_is_human
+    .select([sety.PAGE_ID, sc.NUM_EDITS, spi.PREDICTED_LABELS])
+    .filter(pl.col(spi.PREDICTED_LABELS).is_not_null())
+    .explode(spi.PREDICTED_LABELS)
+    .unnest(spi.PREDICTED_LABELS)  # -> columns: 'label', 'probability'
+    .sort([sety.PAGE_ID, "probability"], descending=[False, True])
+    .unique(subset=[sety.PAGE_ID], keep="first")  # pick TOP-1 topic per page
+    .select(
+        [
+            pl.col("label").alias("topic"),
+            pl.col(sc.NUM_EDITS).alias("num_human_edits"),
+        ]
+    )
+)
+
+df_top_topics_is_human = (
+    df_page_topics_is_human
+    .group_by("topic")
+    .agg(pl.col("num_human_edits").sum().alias("num_human_edits"))
+    .sort("num_human_edits", descending=True)
+    .head(top_k)
+)
+
+print(df_top_topics_is_human)
 
 print("-- Comparision Bots & Humans --")
 # TODO: Wie schneiden die Top Seiten der Bots bei den Humans ab?
