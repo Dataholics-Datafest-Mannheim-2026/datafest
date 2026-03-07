@@ -8,7 +8,7 @@ import polars as pl
 from pathlib import Path
 
 INPUT  = Path(__file__).parent / "accounts_master.ndjson"
-OUTPUT = Path(__file__).parent / "accounts_master_all_accounts_new.csv"
+OUTPUT = Path(__file__).parent / "accounts_master_all_accounts.csv"
 
 # Cap: export only the TOP_N most active accounts. None = export all.
 TOP_N = None

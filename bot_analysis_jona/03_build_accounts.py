@@ -8,7 +8,7 @@ Load in later steps with: pl.read_ndjson("accounts_master.ndjson")
 
 ── FIELDS ────────────────────────────────────────────────────────────────────
 Identity
-  user_text              account name (null = anonymous IP edit)
+  user_text              account name (anonymous IP edits excluded)
   is_bot                 Wikipedia bot flag
 
 Volume
@@ -113,7 +113,8 @@ for lang in LANGUAGES:
     print(f"\n  Loading {lang.upper()}...")
     start = time.time()
     edits = pl.read_ndjson(edits_file)
-    print(f"  -> {edits.shape[0]:,} rows in {time.time() - start:.2f}s")
+    edits = edits.filter(pl.col("user_text").is_not_null())
+    print(f"  -> {edits.shape[0]:,} rows (anonymous filtered) in {time.time() - start:.2f}s")
 
     # Parse timestamp string to datetime once
     edits = edits.with_columns(
@@ -358,7 +359,6 @@ bots   = accounts.filter(pl.col("is_bot") == True)
 humans = accounts.filter(pl.col("is_bot") == False)
 
 print(f"\n  Total: {accounts.shape[0]:,}  |  Bots: {len(bots):,}  |  Humans: {len(humans):,}")
-print(f"  Anonymous (null user_text): {accounts.filter(pl.col('user_text').is_null()).shape[0]:,}")
 
 print("\n  Top 10 accounts by total edits:")
 print(
