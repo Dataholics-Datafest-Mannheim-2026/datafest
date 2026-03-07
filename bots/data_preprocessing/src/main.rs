@@ -1,6 +1,8 @@
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, BufWriter},
+    net::{Ipv4Addr, Ipv6Addr},
+    str::FromStr,
 };
 
 use chrono::{DateTime, Timelike, Utc};
@@ -118,9 +120,9 @@ impl RevisionTags {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Entity {
-    pub user_text: heapless::String<USER_TEXT_CAP>,
+    pub user_text_is_ip: bool,
     pub avg_revision_comment_length: u64,
-    pub avg_edit_hours: u32,
+    // pub avg_edit_hours: u32,
     pub revision_tags: heapless::Vec<RevisionTags, REVISION_TAGS_CAP>,
     pub total_edits: u64,
     pub pct_of_reverted_edits: u8,  // percent 0..=100
@@ -144,8 +146,8 @@ impl Entity {
             / (self.total_edits + 1);
 
         let new_hour = entry.revision_timestamp.time().hour() as u64;
-        self.avg_edit_hours = ((self.avg_edit_hours as u64 * self.total_edits + new_hour)
-            / (self.total_edits + 1)) as u32;
+        // self.avg_edit_hours = ((self.avg_edit_hours as u64 * self.total_edits + new_hour)
+        // / (self.total_edits + 1)) as u32;
 
         // Merge revision tags - increment count if tag exists, otherwise add it
         for new_tag in new_tags.iter() {
@@ -181,13 +183,17 @@ impl Entity {
         *self.edited_articles.entry(entry.page_id).or_insert(0) += 1;
         self.unique_edited_articles = self.edited_articles.len() as u64;
 
-        *self.edited_languages.entry(language.to_string()).or_insert(0) += 1;
+        *self
+            .edited_languages
+            .entry(language.to_string())
+            .or_insert(0) += 1;
         self.unique_edited_languages = self.edited_languages.len() as u64;
 
         self.edit_timestamps.push(entry.revision_timestamp);
         self.edit_timestamps.sort_unstable();
         if self.edit_timestamps.len() >= 2 {
-            let mut intervals: Vec<u64> = self.edit_timestamps
+            let mut intervals: Vec<u64> = self
+                .edit_timestamps
                 .windows(2)
                 .map(|w| (w[1] - w[0]).num_seconds().unsigned_abs())
                 .collect();
@@ -212,11 +218,21 @@ impl Entity {
         let mut edited_languages = HashMap::new();
         edited_languages.insert(language.to_string(), 1);
 
-        Entity {
-            user_text: entry.user_text.clone().unwrap(),
-            avg_revision_comment_length: entry.revision_comment.len() as u64,
-            avg_edit_hours: entry.revision_timestamp.time().hour(),
+        let user_text_is_ip = if let Ok(_) =
+            Ipv4Addr::from_str(entry.user_text.clone().unwrap().to_string().as_str())
+        {
+            true
+        } else if let Ok(_) =
+            Ipv6Addr::from_str(entry.user_text.clone().unwrap().to_string().as_str())
+        {
+            true
+        } else {
+            false
+        };
 
+        Entity {
+            avg_revision_comment_length: entry.revision_comment.len() as u64,
+            // avg_edit_hours: entry.revision_timestamp.time().hour(),
             total_edits: 1,
             pct_of_reverted_edits: if revision_tags.iter().any(RevisionTags::reverted) {
                 100
@@ -235,6 +251,7 @@ impl Entity {
             edited_articles,
             edited_languages,
             edit_timestamps: vec![entry.revision_timestamp],
+            user_text_is_ip,
         }
     }
 }
@@ -275,7 +292,9 @@ fn main() -> anyhow::Result<()> {
                 };
 
                 for entry in entries {
-                    if let Some(user_text) = entry.user_text.clone() {
+                    if let Some(user_text) = entry.user_text.clone()
+                        && !user_text.trim().is_empty()
+                    {
                         if let Some(index_entry) = index.get_mut(&user_text) {
                             index_entry.update(entry, language)
                         } else {
