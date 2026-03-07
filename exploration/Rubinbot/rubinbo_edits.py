@@ -7,7 +7,8 @@ import schemas.edit_types as sety
 
 def main() -> None:
     # Load ru-wiki edit types
-    df = pl.read_ndjson("../data/edit_types/ruwiki.json.gz")
+    base = Path(__file__).parent
+    df = pl.read_ndjson(base.parent.parent / "data" / "edit_types" / "ruwiki.json.gz")
 
     # Filter for the specific user
     user = "Rubinbot"
