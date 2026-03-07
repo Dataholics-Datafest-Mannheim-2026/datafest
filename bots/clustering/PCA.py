@@ -1,4 +1,5 @@
 import polars as pl
+import pandas as pd
 import json
 import numpy as np
 from pathlib import Path
@@ -195,6 +196,46 @@ def plot_results(X_pca, cluster_labels, is_bot, bot_cluster, pca,
     print(f"\nPlot saved to {output_path}")
     plt.show()
 
+def plot_pca_loadings(pca, feature_cols, top_n=10, output_path="pca_loadings.png"):
+    """Zeigt welche Features PC1 und PC2 am stärksten beeinflussen."""
+    loadings = pd.DataFrame(
+        pca.components_.T,
+        index=feature_cols,
+        columns=["PC1", "PC2"]
+    )
+
+    # Wichtigkeit = Betrag des Loadings gewichtet nach erklärter Varianz
+    loadings["importance"] = (
+        abs(loadings["PC1"]) * pca.explained_variance_ratio_[0] +
+        abs(loadings["PC2"]) * pca.explained_variance_ratio_[1]
+    )
+    top_features = loadings.sort_values("importance", ascending=False).head(top_n)
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    # PC1 Loadings
+    top_features["PC1"].sort_values().plot(kind="barh", ax=axes[0], color="#4C9BE8")
+    axes[0].set_title("PC1 Loadings")
+    axes[0].axvline(0, color="black", linewidth=0.8)
+
+    # PC2 Loadings
+    top_features["PC2"].sort_values().plot(kind="barh", ax=axes[1], color="#E8624C")
+    axes[1].set_title("PC2 Loadings")
+    axes[1].axvline(0, color="black", linewidth=0.8)
+
+    # Gesamt-Wichtigkeit
+    top_features["importance"].sort_values().plot(kind="barh", ax=axes[2], color="#6BBF6B")
+    axes[2].set_title(f"Gesamt-Wichtigkeit (Top {top_n})")
+
+    plt.suptitle("PCA Feature Importance", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    print(f"Loadings plot saved to {output_path}")
+    plt.show()
+
+    print("\nTop Features:")
+    print(top_features.sort_values("importance", ascending=False))
+    return top_features
 
 # ─────────────────────────────────────────────
 # 5. EXPORT RESULTS
@@ -251,6 +292,9 @@ if __name__ == "__main__":
     print("\nPlotting...")
     plot_results(X_pca, cluster_labels, feature_df["is_bot"].to_list(),
                  bot_cluster, pca)
+
+    feature_cols = [c for c in feature_df.columns if c not in ["user_text", "is_bot"]]
+    plot_pca_loadings(pca, feature_cols, top_n=10)
 
     print("\nExporting results...")
     export_results(feature_df, cluster_labels, bot_cluster)
