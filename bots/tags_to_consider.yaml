@@ -1,26 +1,39 @@
 tags_yes:
-  - advanced mobile edit
-  - android app edit
-  - contenttranslation
-  - contenttranslation-v2
-  - editcheck-newcontent
-  - editcheck-newreference
-  - emoji
-  - huggle
-  - ios app edit
-  - mobile app edit
-  - mobile edit
-  - mobile web edit
-  - mw-blank
-  - mw-manual-revert
-  - mw-reverted
-  - mw-rollback
-  - mw-undo
-  - sectiontranslation
-  - twinkle
-  - visualeditor
-  - visualeditor-switched
-  - wikieditor
+  mobile_editing:
+    - advanced mobile edit
+    - android app edit
+    - ios app edit
+    - mobile app edit
+    - mobile edit
+    - mobile web edit
+  
+  translation_tools:
+    - contenttranslation
+    - contenttranslation-v2
+    - sectiontranslation
+  
+  visual_editors:
+    - visualeditor
+    - visualeditor-switched
+    - wikieditor
+    - emoji
+  
+  edit_checking:
+    - editcheck-newcontent
+    - editcheck-newreference
+  
+  reversion_and_rollback:
+    - mw-reverted
+    - mw-rollback
+    - mw-undo
+    - mw-manual-revert
+  
+  bot_assisted_editing:
+    - huggle
+    - twinkle
+  
+  other:
+    - mw-blank
 
 tags_no:
   - AWB
@@ -62,31 +75,31 @@ tags_no:
   - newcomer task update
   - quickLinker
   - visualeditor-wikitext
-  - إزالة نصوص
-  - إضافة أرقام عربية مشرقية
-  - إضافة وصلات خارجية في مقالات غير مراجعة
-  - إفراغ مقطع كامل
-  - استبدال "الصحراء الغربية"
-  - استبدال مصطلح داعش
-  - تراجع عن التعديلات لغير المحررين
-  - تعديل شريط البوابات
-  - تعديل صفحات التوضيح
-  - تعديلات طويلة
-  - تعديلات قصيرة
-  - تعديلات كومنز
-  - تغير الوصلات الداخلية
-  - تغير في القوالب
-  - تغيير إسرائيل إلى فلسطين
-  - تغيير التواريخ
-  - تكرار محارف
-  - تمت إضافة وسم nowiki
-  - رموز يونيكود
-  - صفحات لاعبي كرة القدم
-  - كتابة ألفاظ نابية أو شخبطة
-  - لا أحرف عربية مضافة
-  - لفظ تباهي
-  - مقالات كمية
-  - نسخ محتمل
-  - نص قبل القالب
-  - وصلات خارجية للمراجعة
-  - وصلات خارجية للمراجعة 2
+  - إزالة نصوص  # Removing text
+  - إضافة أرقام عربية مشرقية  # Adding Eastern Arabic numerals
+  - إضافة وصلات خارجية في مقالات غير مراجعة  # Adding external links in unreviewed articles  # Adding external links in unreviewed articles
+  - إفراغ مقطع كامل  # Emptying a complete section
+  - استبدال "الصحراء الغربية"  # Replacing 'Western Sahara'
+  - استبدال مصطلح داعش  # Replacing ISIS term
+  - تراجع عن التعديلات لغير المحررين  # Rollback edits for non-editors  # Rollback edits for non-editors
+  - تعديل شريط البوابات  # Editing portal bar
+  - تعديل صفحات التوضيح  # Editing disambiguation pages
+  - تعديلات طويلة  # Long edits
+  - تعديلات قصيرة  # Short edits  # Short edits
+  - تعديلات كومنز  # Commons edits
+  - تغير الوصلات الداخلية  # Changing internal links
+  - تغير في القوالب  # Changing templates
+  - تغيير إسرائيل إلى فلسطين  # Changing Israel to Palestine  # Changing Israel to Palestine
+  - تغيير التواريخ  # Changing dates
+  - تكرار محارف  # Repeating characters
+  - تمت إضافة وسم nowiki  # Nowiki tag added
+  - رموز يونيكود  # Unicode symbols  # Unicode symbols
+  - صفحات لاعبي كرة القدم  # Football player pages
+  - كتابة ألفاظ نابية أو شخبطة  # Writing profanity or scribbles
+  - لا أحرف عربية مضافة  # No Arabic characters added
+  - لفظ تباهي  # Boasting expression  # Boasting expression
+  - مقالات كمية  # Quantitative articles
+  - نسخ محتمل  # Possible copying
+  - نص قبل القالب  # Text before template
+  - وصلات خارجية للمراجعة  # External links for review
+  - وصلات خارجية للمراجعة 2  # External links for review 2
