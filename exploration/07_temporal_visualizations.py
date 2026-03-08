@@ -5,10 +5,10 @@ Topic: Bots as Wikipedia Editors
 Reads temporal_daily.ndjson (produced by 06_temporal_aggregation.py) and
 creates 5 presentation-ready charts about how bot activity evolves over 2025.
 
-Charts saved to bot_analysis_jona/figures/ as PNG (150 dpi).
+Charts saved to exploration/figures/ as PNG (150 dpi).
 
 Requires: uv add matplotlib
-Run:      uv run bot_analysis_jona/07_temporal_visualizations.py
+Run:      uv run exploration/07_temporal_visualizations.py
 """
 
 import polars as pl
@@ -19,9 +19,8 @@ from pathlib import Path
 import datetime
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-INPUT        = Path(__file__).parent / "temporal_daily.ndjson"
-INPUT_TOPIC  = Path(__file__).parent / "temporal_daily_by_topic.ndjson"
-INPUT_HOURLY = Path(__file__).parent / "temporal_hourly.ndjson"
+INPUT       = Path(__file__).parent / "temporal_daily.ndjson"
+INPUT_TOPIC = Path(__file__).parent / "temporal_daily_by_topic.ndjson"
 OUTPUT_DIR  = Path(__file__).parent / "figures"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -143,7 +142,7 @@ ax.set_ylabel("Edits per day")
 ax.set_title("FIG T1 — Daily Edit Volume Across All Languages (2025)\n"
              "Bots contribute consistently; humans drive the bulk and seasonal swings")
 ax.legend(loc="upper right")
-save(fig, "temporal_visualizations_T1_daily_volume")
+save(fig, "T1_daily_volume")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -173,7 +172,7 @@ ax.set_ylabel("Bot share of all edits")
 ax.set_title("FIG T2 — Bot Share of All Edits Over Time (Global, 2025)\n"
              "Is automation's role in Wikipedia growing or stable?")
 ax.legend(loc="upper right")
-save(fig, "temporal_visualizations_T2_global_bot_share")
+save(fig, "T2_global_bot_share")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -218,7 +217,7 @@ fig.suptitle("FIG T3 — Bot Share per Language (2025)\n"
              f"{ROLLING_WINDOW}-day rolling avg  |  dashed = year mean",
              fontsize=13, fontweight="bold", y=1.01)
 fig.tight_layout()
-save(fig, "temporal_visualizations_T3_bot_share_per_language")
+save(fig, "T3_bot_share_per_language")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -255,7 +254,7 @@ ax.set_ylabel("Bot share of that edit type")
 ax.set_title("FIG T4 — Bot Share by Edit Category (Global, 2025)\n"
              f"Which types of edits are bots dominating?  ({ROLLING_WINDOW}-day rolling avg)")
 ax.legend(loc="right", framealpha=0.9)
-save(fig, "temporal_visualizations_T4_bot_share_by_category")
+save(fig, "T4_bot_share_by_category")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -306,7 +305,7 @@ ax.set_xticklabels(list(month_starts.values()))
 ax.set_xlabel("Week of 2025")
 ax.set_title("FIG T5 — Bot Share Heatmap: Language × Week (2025)\n"
              "Darker red = higher bot share that week in that language")
-save(fig, "temporal_visualizations_T5_heatmap_language_week")
+save(fig, "T5_heatmap_language_week")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -351,7 +350,7 @@ fig.suptitle("FIG T6 — Unique Editors per Day by Language (2025)\n"
              f"({ROLLING_WINDOW}-day rolling avg)",
              fontsize=13, fontweight="bold", y=1.01)
 fig.tight_layout()
-save(fig, "temporal_visualizations_T6_unique_editors_per_language")
+save(fig, "T6_unique_editors_per_language")
 
 
 # ── LOAD TOPIC DATA ───────────────────────────────────────────────────────────
@@ -407,7 +406,7 @@ else:
     ax.set_title("FIG T7 — Bot Share by Topic Focus (Global, 2025)\n"
                  f"Which subject areas do bots dominate?  ({ROLLING_WINDOW}-day rolling avg)")
     ax.legend(loc="right", framealpha=0.9)
-    save(fig, "temporal_visualizations_T7_bot_share_by_topic")
+    save(fig, "T7_bot_share_by_topic")
 
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -458,102 +457,7 @@ else:
                  f"({ROLLING_WINDOW}-day rolling avg)",
                  fontsize=13, fontweight="bold", y=1.01)
     fig.tight_layout()
-    save(fig, "temporal_visualizations_T8_bot_share_by_topic_per_language")
+    save(fig, "T8_bot_share_by_topic_per_language")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# FIG T9 — 24-hour editing rhythm: bots vs humans
-# ──────────────────────────────────────────────────────────────────────────────
-# Shows what fraction of each group's total annual edits happen in each UTC hour.
-# Bots running on automated schedules should produce a flat or spiky distribution;
-# humans should show a clear daytime peak driven by European/American working hours.
-# The uniform baseline (4.17% per hour) marks what a perfectly round-the-clock
-# editor would look like.
-# ══════════════════════════════════════════════════════════════════════════════
-if not INPUT_HOURLY.exists():
-    print(f"WARNING: {INPUT_HOURLY.name} not found — skipping T9. Re-run 06 first.")
-else:
-    print("FIG T9: 24-hour editing rhythm...")
-
-    df_hourly = pl.read_ndjson(INPUT_HOURLY)
-
-    global_hourly = (
-        df_hourly.group_by(["hour", "is_bot"])
-        .agg(pl.col("total_edits").sum())
-        .sort(["is_bot", "hour"])
-    )
-    bot_h = global_hourly.filter(pl.col("is_bot") == True).sort("hour")
-    hum_h = global_hourly.filter(pl.col("is_bot") == False).sort("hour")
-
-    all_hours = np.arange(24)
-
-    def to_hour_array(frame: pl.DataFrame) -> np.ndarray:
-        hour_map = dict(zip(frame["hour"].to_list(),
-                            frame["total_edits"].to_numpy().astype(float)))
-        return np.array([hour_map.get(int(h), 0.0) for h in all_hours])
-
-    def norm_pct(arr: np.ndarray) -> np.ndarray:
-        total = arr.sum()
-        return arr / total * 100 if total > 0 else arr
-
-    bot_frac = norm_pct(to_hour_array(bot_h))
-    hum_frac = norm_pct(to_hour_array(hum_h))
-
-    fig, ax = plt.subplots(figsize=(12, 5))
-
-    # Shade night hours (rough proxy — 22:00–06:00 UTC)
-    ax.axvspan(-0.5, 5.5,  alpha=0.06, color="navy", zorder=0)
-    ax.axvspan(21.5, 23.5, alpha=0.06, color="navy", zorder=0)
-    ax.axhline(100 / 24, color="#999999", lw=1.2, ls="--",
-               label=f"Uniform distribution (4.17% / h)")
-
-    ax.plot(all_hours, hum_frac, color=HUMAN_COLOR, lw=2.5,
-            marker="o", ms=4, label="Humans")
-    ax.plot(all_hours, bot_frac, color=BOT_COLOR, lw=2.5,
-            marker="o", ms=4, label="Bots")
-
-    ax.set_xticks(range(0, 24, 2))
-    ax.set_xlim(-0.5, 23.5)
-    ax.set_xlabel("Hour of day (UTC)")
-    ax.set_ylabel("% of group's total annual edits")
-    ax.set_title("FIG T9 — 24-Hour Editing Rhythm: Bots vs Humans (2025, UTC)\n"
-                 "Shaded = night hours  |  dashed = perfectly uniform baseline")
-    ax.legend(loc="upper left")
-    save(fig, "temporal_visualizations_T9_24h_distribution")
-
-    # ── FIG T10 — 24-hour rhythm per language ────────────────────────────────
-    print("FIG T10: 24-hour rhythm per language (bots vs humans)...")
-
-    fig, axes = plt.subplots(2, 5, figsize=(18, 7), sharey=False)
-    axes = axes.flatten()
-
-    for ax, lang in zip(axes, LANGUAGES):
-        lang_hourly = df_hourly.filter(pl.col("language") == lang)
-        bot_h_l = lang_hourly.filter(pl.col("is_bot") == True).sort("hour")
-        hum_h_l = lang_hourly.filter(pl.col("is_bot") == False).sort("hour")
-
-        ax.axvspan(-0.5, 5.5,  alpha=0.06, color="navy", zorder=0)
-        ax.axvspan(21.5, 23.5, alpha=0.06, color="navy", zorder=0)
-        ax.axhline(100 / 24, color="#cccccc", lw=0.8, ls="--")
-
-        if hum_h_l.shape[0] > 0:
-            ax.plot(all_hours, norm_pct(to_hour_array(hum_h_l)),
-                    color=HUMAN_COLOR, lw=1.8, label="Humans")
-        if bot_h_l.shape[0] > 0:
-            ax.plot(all_hours, norm_pct(to_hour_array(bot_h_l)),
-                    color=BOT_COLOR, lw=1.8, label="Bots")
-
-        ax.set_xticks(range(0, 24, 6))
-        ax.set_xticklabels(["0h", "6h", "12h", "18h"])
-        ax.set_xlim(-0.5, 23.5)
-        ax.set_title(LANG_LABELS[lang])
-
-    axes[0].legend(fontsize=8, loc="upper left")
-    fig.suptitle("FIG T10 — 24-Hour Editing Rhythm per Language: Bots vs Humans (2025, UTC)\n"
-                 "Shaded = night hours  |  dashed = uniform baseline",
-                 fontsize=13, fontweight="bold", y=1.01)
-    fig.tight_layout()
-    save(fig, "temporal_visualizations_T10_24h_per_language")
-
-
-print(f"\nDone. {len(list(OUTPUT_DIR.glob('temporal_visualizations_T*.png')))} temporal figures saved to: {OUTPUT_DIR}")
+print(f"\nDone. {len(list(OUTPUT_DIR.glob('T*.png')))} temporal figures saved to: {OUTPUT_DIR}")

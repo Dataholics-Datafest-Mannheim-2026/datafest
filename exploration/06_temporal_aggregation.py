@@ -3,7 +3,7 @@ DataFest 2026 — Step 6: Temporal Aggregation
 Topic: Bots as Wikipedia Editors
 
 Loads all 10 language edit files and aggregates to daily counts.
-Output: bot_analysis_jona/temporal_daily.ndjson
+Output: exploration/temporal_daily.ndjson
 
 Each output row = one (date, language, is_bot) combination with:
   total_edits   — total edits made that day
@@ -14,7 +14,7 @@ Each output row = one (date, language, is_bot) combination with:
   revert_edits  — edits tagged as mw-undo or mw-manual-revert
 
 Run once; visualizations in 07_temporal_visualizations.py read the output.
-Run: uv run bot_analysis_jona/06_temporal_aggregation.py
+Run: uv run exploration/06_temporal_aggregation.py
 """
 
 import polars as pl
@@ -27,7 +27,6 @@ EDITS_DIR          = BASE_DATA_DIR / "data_extracted" / "edit_types"
 PAGE_INFO_PATH     = BASE_DATA_DIR / "data_extracted" / "page_info.json"
 OUTPUT_PATH        = Path(__file__).parent / "temporal_daily.ndjson"
 OUTPUT_TOPIC_PATH  = Path(__file__).parent / "temporal_daily_by_topic.ndjson"
-OUTPUT_HOURLY_PATH = Path(__file__).parent / "temporal_hourly.ndjson"
 
 LANGUAGES     = ['ar', 'de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'ru', 'sv']
 TIMESTAMP_FMT = "%Y-%m-%dT%H:%M:%S%.3fZ"
@@ -57,7 +56,6 @@ page_lookup = (
 
 daily_frames       = []
 topic_daily_frames = []
-hourly_frames      = []
 
 for lang in LANGUAGES:
     edits_file = EDITS_DIR / f"{lang}wiki.json.gz"
@@ -66,16 +64,13 @@ for lang in LANGUAGES:
     edits = pl.read_ndjson(edits_file)
     print(f"  -> {edits.shape[0]:,} rows in {time.time() - start:.2f}s")
 
-    # Parse timestamp once; extract both date and hour of day
+    # Strip timestamp to date only — we don't need sub-day precision
     edits = edits.with_columns(
         pl.col("revision_timestamp")
         .str.to_datetime(TIMESTAMP_FMT, time_unit="ms")
-        .alias("_ts")
+        .dt.date()
+        .alias("date")
     )
-    edits = edits.with_columns(
-        pl.col("_ts").dt.date().alias("date"),
-        pl.col("_ts").dt.hour().alias("hour"),
-    ).drop("_ts")
 
     # Edit type counts via regex on raw JSON — same patterns as file 03
     edits = edits.with_columns(
@@ -111,15 +106,6 @@ for lang in LANGUAGES:
     )
     daily_frames.append(daily)
     print(f"  -> {daily.shape[0]:,} daily rows for {lang.upper()}")
-
-    # Hourly aggregation — count edits per (hour, is_bot) for this language
-    hourly = (
-        edits.group_by(["hour", "is_bot"])
-        .agg(pl.len().alias("total_edits"))
-        .with_columns(pl.lit(lang).alias("language"))
-        .sort("hour")
-    )
-    hourly_frames.append(hourly)
 
     # Collapse to one row per (date, is_bot, top_category) for this language
     topic_daily = (
@@ -172,13 +158,3 @@ print(f"\n  Writing to: {OUTPUT_TOPIC_PATH}")
 all_topic_daily.write_ndjson(OUTPUT_TOPIC_PATH)
 size_mb = OUTPUT_TOPIC_PATH.stat().st_size / 1_048_576
 print(f"  -> {all_topic_daily.shape[0]:,} rows, {size_mb:.2f} MB")
-
-all_hourly = (
-    pl.concat(hourly_frames)
-    .sort(["hour", "language", "is_bot"])
-)
-print(f"\n  Hourly rows: {all_hourly.shape[0]:,}")
-print(f"  Writing to: {OUTPUT_HOURLY_PATH}")
-all_hourly.write_ndjson(OUTPUT_HOURLY_PATH)
-size_mb = OUTPUT_HOURLY_PATH.stat().st_size / 1_048_576
-print(f"  -> {all_hourly.shape[0]:,} rows, {size_mb:.2f} MB")

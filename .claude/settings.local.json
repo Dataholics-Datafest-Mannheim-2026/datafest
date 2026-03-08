@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv add lightgbm shap)",
+      "Bash(uv add pyarrow)",
+      "Bash(python -c \":*)"
+    ]
+  }
+}
