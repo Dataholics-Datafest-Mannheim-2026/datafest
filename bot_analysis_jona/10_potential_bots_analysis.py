@@ -36,9 +36,10 @@ from pathlib import Path
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 BASE_DATA_DIR       = Path(__file__).parent.parent / "data"
 EDITS_DIR           = BASE_DATA_DIR / "data_extracted" / "edit_types"
-POTENTIAL_BOTS_JSON = BASE_DATA_DIR / "other_data" / "potential_bot_usernames_unfiltered.json"
+POTENTIAL_BOTS_JSON = BASE_DATA_DIR / "other_data" / "bot_usernames.json"
 ACCOUNTS_INPUT      = Path(__file__).parent / "accounts_master.ndjson"
 TEMPORAL_INPUT      = Path(__file__).parent / "temporal_daily.ndjson"
+HOURLY_INPUT        = Path(__file__).parent / "temporal_hourly.ndjson"
 OUTPUT_DIR          = Path(__file__).parent / "figures" / "potential_bot_figures"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +50,7 @@ LANG_LABELS    = {
     "ru": "Russian","sv": "Swedish",
 }
 TIMESTAMP_FMT  = "%Y-%m-%dT%H:%M:%S%.3fZ"
-ROLLING_WINDOW = 1
+ROLLING_WINDOW = 3
 
 EDIT_TYPES  = ["total_edits", "ref_edits", "tmpl_edits", "link_edits", "revert_edits"]
 EDIT_LABELS = {
@@ -60,9 +61,12 @@ EDIT_LABELS = {
     "revert_edits": "Reverts",
 }
 
-BOT_COLOR       = "#E05C4B"   # red
-HUMAN_COLOR     = "#4B8BE0"   # blue
-POTENTIAL_COLOR = "#27AE60"   # green
+BOT_COLOR       = "#EE8019"   # Wikipedia orange — confirmed bots
+HUMAN_COLOR     = "#71D1B3"   # Wikipedia green  — humans
+POTENTIAL_COLOR = "#5748B5"   # Wikipedia purple — potential bots
+
+# Minimum active editing days for the filtered T9 24h-rhythm figure
+ACTIVE_DAYS_MIN_FILTER = 200
 
 plt.rcParams.update({
     "figure.dpi":        150,
@@ -162,22 +166,13 @@ ax.scatter(pv, pw, color=POTENTIAL_COLOR, s=15, zorder=4, alpha=0.6,
 ax.scatter(bv, bw, color=BOT_COLOR, s=50, zorder=5,
            label=f"Confirmed bots (n={n_bots})", edgecolors="white", linewidths=0.4)
 
-# Label top 10 most active potential bots
-for row in active_pb.sort("total_edits", descending=True).head(10).iter_rows(named=True):
-    ax.annotate(
-        row["user_text"] or "anon",
-        (np.log1p(row["edit_velocity"]), np.log1p(row["avg_words_changed"] or 0)),
-        fontsize=7, xytext=(4, 2), textcoords="offset points",
-        color="#1a6e3a", clip_on=True,
-    )
 
 tick_vals = [0, 1, 5, 20, 100, 500]
 ax.set_xticks(np.log1p(tick_vals)); ax.set_xticklabels(tick_vals)
 ax.set_yticks(np.log1p(tick_vals)); ax.set_yticklabels(tick_vals)
 ax.set_xlabel("Edit velocity  (edits per day)")
 ax.set_ylabel("Avg. words changed per edit")
-ax.set_title("FIG 01 — Behavioral Fingerprint: Bots vs Potential Bots vs Humans\n"
-             "Where do potential bots fall in the edit-speed vs text-size space?")
+ax.set_title("Potential bots cluster near confirmed bots in edit speed")
 ax.legend(loc="upper right")
 save(fig, "potential_bots_01_behavioral_fingerprint")
 
@@ -216,7 +211,7 @@ for bar in (*bars_b, *bars_p, *bars_h):
 ax.set_xticks(x)
 ax.set_xticklabels([t.capitalize() for t in EDIT_TYPES_02])
 ax.set_ylabel("% of accounts")
-ax.set_title("FIG 02 — Primary Edit Type: Bots vs Potential Bots vs Humans")
+ax.set_title("Potential bots favour the same edit types as confirmed bots")
 ax.legend()
 ax.set_ylim(0, max(max(bot_pcts), max(pb_pcts), max(human_pcts)) * 1.18)
 save(fig, "potential_bots_02_primary_edit_type")
@@ -244,8 +239,7 @@ ax.hist(bv_vals, bins=bins, color=BOT_COLOR,       alpha=0.75, label="Confirmed 
 ax.set_xscale("log")
 ax.set_xlabel("Edit velocity  (edits per day, log scale)")
 ax.set_ylabel("Density")
-ax.set_title("FIG 03 — Edit Velocity Distribution\n"
-             "Do potential bots edit more like confirmed bots or humans?")
+ax.set_title("Potential bots edit significantly faster than humans")
 ax.legend()
 save(fig, "potential_bots_03_velocity_distribution")
 
@@ -269,8 +263,7 @@ ax.plot(pb_x,    pb_y,    color=POTENTIAL_COLOR,  lw=2, label="Potential bots")
 ax.plot(bot_x,   bot_y,   color=BOT_COLOR,        lw=2, label="Confirmed bots")
 ax.set_xlabel("Cumulative fraction of accounts (least → most active)")
 ax.set_ylabel("Cumulative fraction of total edits")
-ax.set_title("FIG 04 — Edit Concentration (Lorenz Curve)\n"
-             "How evenly are edits distributed within each group?")
+ax.set_title("Edits are most concentrated among bots; potential bots fall between")
 ax.legend(loc="upper left")
 save(fig, "potential_bots_04_lorenz_curve")
 
@@ -305,7 +298,7 @@ for ax, frame, color, title, use_pct in [
     ax.set_xlabel("Languages active in")
     ax.set_title(title)
 
-fig.suptitle("FIG 05 — Multilingual Reach: How many wikis does each account touch?",
+fig.suptitle("Potential bots are active across more languages than humans",
              fontsize=13, fontweight="bold", y=1.02)
 save(fig, "potential_bots_05_multilingual_reach")
 
@@ -349,13 +342,13 @@ tbl.auto_set_font_size(False)
 tbl.set_fontsize(8.5)
 tbl.scale(1, 1.45)
 for col_idx in range(len(cols)):
-    tbl[0, col_idx].set_facecolor("#1a6e3a")
+    tbl[0, col_idx].set_facecolor(POTENTIAL_COLOR)
     tbl[0, col_idx].set_text_props(color="white", fontweight="bold")
 for row_idx in range(1, len(rows) + 1):
-    color = "#F0FAF4" if row_idx % 2 == 0 else "white"
+    color = "#EDEAF8" if row_idx % 2 == 0 else "white"
     for col_idx in range(len(cols)):
         tbl[row_idx, col_idx].set_facecolor(color)
-ax.set_title("FIG 06 — Top 20 Most Active Potential Bots",
+ax.set_title("Top 20 Most Active Potential Bots",
              fontsize=13, fontweight="bold", pad=12, loc="left")
 save(fig, "potential_bots_06_top20_potential_bots_table")
 
@@ -395,7 +388,7 @@ ax.barh(y - w,  h_vals, w, color=HUMAN_COLOR,      alpha=0.9, label="Humans")
 ax.set_yticks(y)
 ax.set_yticklabels(all_topics)
 ax.set_xlabel("% of accounts whose most-edited topic is this category")
-ax.set_title("FIG 07 — Topic Focus: Bots vs Potential Bots vs Humans")
+ax.set_title("Potential bots concentrate on fewer topic categories than humans")
 ax.legend()
 save(fig, "potential_bots_07_topic_distribution")
 
@@ -441,8 +434,7 @@ ax.set_xticks(x)
 ax.set_xticklabels(bins_labels)
 ax.set_xlabel("Reverted rate (% of edits later undone by others)")
 ax.set_ylabel("% of accounts in this bucket")
-ax.set_title(f"FIG 08 — Edit Quality: How Often Are Edits Reverted?\n"
-             f"Accounts with ≥{min_edits} edits only")
+ax.set_title("Potential bots are reverted more often than humans")
 ax.legend()
 save(fig, "potential_bots_08_reverted_rate")
 
@@ -478,8 +470,7 @@ ax.set_xticks(np.log1p(tick_vals)); ax.set_xticklabels(tick_vals)
 ax.set_yticks(np.log1p(tick_vals)); ax.set_yticklabels(tick_vals)
 ax.set_xlabel("Edit velocity  (edits per day)")
 ax.set_ylabel("Avg. words changed per edit")
-ax.set_title("FIG 09 — Where Do Potential Bots Fall?\n"
-             "Overlay on full human population density map")
+ax.set_title("Potential bots sit in high-velocity, low-text territory")
 ax.legend(loc="upper right")
 save(fig, "potential_bots_09_behavioral_scatter")
 
@@ -519,8 +510,7 @@ ax.set_xticks(np.log1p(tick_vals_vel))
 ax.set_xticklabels(tick_vals_vel)
 ax.set_xlabel("Edit velocity (edits per active day)")
 ax.set_ylabel("Active editing days (unique calendar days)")
-ax.set_title("FIG 10 — Velocity vs. Active Days\n"
-             "Potential bots vs confirmed bots vs humans")
+ax.set_title("Highly active potential bots match confirmed bot patterns")
 ax.legend(loc="upper right", markerscale=1.5)
 save(fig, "potential_bots_10_velocity_vs_active_days")
 
@@ -561,17 +551,17 @@ ax.scatter(
 )
 ax.scatter(
     np.log1p(heavy_h["edit_velocity_active_days"].to_numpy()), heavy_h["active_days"].to_numpy(),
-    color="#F1C40F", s=35, zorder=5, edgecolors="#B7950B", linewidths=0.6,
+    color=HUMAN_COLOR, s=35, zorder=5, edgecolors="#3a9e87", linewidths=0.6,
     label=f"Humans ≥80% reverted (n={len(heavy_h):,})",
 )
 ax.scatter(
     np.log1p(heavy_pb["edit_velocity_active_days"].to_numpy()), heavy_pb["active_days"].to_numpy(),
-    color="#1abc9c", s=35, zorder=6, edgecolors="#0e8a6e", linewidths=0.6,
+    color=POTENTIAL_COLOR, s=35, zorder=6, edgecolors="#3a2f8a", linewidths=0.6,
     label=f"Potential bots ≥80% reverted (n={len(heavy_pb):,})",
 )
 ax.scatter(
     np.log1p(heavy_b["edit_velocity_active_days"].to_numpy()), heavy_b["active_days"].to_numpy(),
-    color="#8E44AD", s=80, zorder=7, marker="^",
+    color=BOT_COLOR, s=80, zorder=7, marker="^",
     edgecolors="white", linewidths=0.6,
     label=f"Confirmed bots ≥80% reverted (n={len(heavy_b):,})",
 )
@@ -581,14 +571,136 @@ ax.set_xticks(np.log1p(tick_vals_vel))
 ax.set_xticklabels(tick_vals_vel)
 ax.set_xlabel("Edit velocity (edits per active day)")
 ax.set_ylabel("Active editing days")
-ax.set_title(
-    "FIG 11 — Heavily Reverted Accounts (≥80% of edits reverted)\n"
-    f"Potential bots: {len(heavy_pb):,} ({len(heavy_pb)/max(len(plot_pb),1)*100:.2f}%)  |  "
-    f"Humans: {len(heavy_h):,} ({len(heavy_h)/max(len(plot_h),1)*100:.2f}%)  |  "
-    f"Bots: {len(heavy_b):,} ({len(heavy_b)/max(len(plot_b),1)*100:.2f}%)"
-)
+ax.set_title("Heavily reverted potential bots cluster at high velocity")
 ax.legend(loc="upper right", markerscale=1.2, fontsize=8)
 save(fig, "potential_bots_11_heavily_reverted")
+
+
+# ── FIG 14 — Velocity vs Active Days: potential bots as density ───────────────
+section("FIG 14: Velocity vs active days — potential bot density")
+
+from scipy.stats import gaussian_kde
+from matplotlib.colors import LogNorm as _LogNorm
+
+def _kde_contours(ax, x, y, color, levels=(0.50, 0.90), lw=1.4):
+    """Overlay KDE contour lines at given probability mass levels."""
+    if len(x) < 20:
+        return
+    try:
+        kde = gaussian_kde(np.vstack([x, y]), bw_method="scott")
+        xi = np.linspace(x.min() - 0.1, x.max() + 0.1, 200)
+        yi = np.linspace(max(0, y.min() - 5), y.max() + 5, 200)
+        Xi, Yi = np.meshgrid(xi, yi)
+        Zi = kde(np.vstack([Xi.ravel(), Yi.ravel()])).reshape(Xi.shape)
+        # Convert levels from probability mass to density thresholds
+        z_flat = np.sort(Zi.ravel())[::-1]
+        cumsum  = np.cumsum(z_flat) / z_flat.sum()
+        thresholds = [z_flat[np.searchsorted(cumsum, lv)] for lv in levels]
+        ax.contour(Xi, Yi, Zi, levels=sorted(thresholds), colors=[color],
+                   linewidths=lw, linestyles=["--", "-"], alpha=0.85, zorder=6)
+    except Exception:
+        pass
+
+_x_pb14  = np.log1p(ppb["edit_velocity_active_days"].to_numpy())
+_y_pb14  = ppb["active_days"].to_numpy().astype(float)
+_x_h14   = np.log1p(ph["edit_velocity_active_days"].to_numpy())
+_y_h14   = ph["active_days"].to_numpy().astype(float)
+_x_b14   = np.log1p(pb_b["edit_velocity_active_days"].to_numpy())
+_y_b14   = pb_b["active_days"].to_numpy().astype(float)
+
+fig, ax = plt.subplots(figsize=(11, 6))
+
+# Humans — light hexbin background
+hb_h = ax.hexbin(_x_h14, _y_h14, gridsize=50, cmap="Greens",
+                  norm=_LogNorm(vmin=1), mincnt=1, alpha=0.5,
+                  linewidths=0, zorder=1)
+
+# Potential bots — hexbin foreground with LogNorm (outliers stay visible)
+hb_pb = ax.hexbin(_x_pb14, _y_pb14, gridsize=50, cmap="Purples",
+                   norm=_LogNorm(vmin=1), mincnt=1, alpha=0.85,
+                   linewidths=0, zorder=2)
+plt.colorbar(hb_pb, ax=ax, label="Potential bots (log count per cell)")
+
+# KDE contour lines — 50% and 90% density mass
+_kde_contours(ax, _x_pb14, _y_pb14, color=POTENTIAL_COLOR, levels=(0.50, 0.90))
+
+# Confirmed bots — individual points (few enough to show)
+ax.scatter(_x_b14, _y_b14, color=BOT_COLOR, s=60, zorder=7, marker="^",
+           edgecolors="white", linewidths=0.5,
+           label=f"Confirmed bots (n={len(pb_b):,})")
+
+tick_vals_vel = [0, 1, 5, 20, 100, 500]
+ax.set_xticks(np.log1p(tick_vals_vel))
+ax.set_xticklabels(tick_vals_vel)
+ax.set_xlabel("Edit velocity (edits per active day)")
+ax.set_ylabel("Active editing days (unique calendar days)")
+ax.set_title("Potential bot density peaks at moderate velocity — a long tail of highly active accounts")
+
+from matplotlib.lines import Line2D
+legend_els = [
+    Line2D([0], [0], color=POTENTIAL_COLOR, lw=1.5, ls="-",  label="Potential bots — 90% density"),
+    Line2D([0], [0], color=POTENTIAL_COLOR, lw=1.5, ls="--", label="Potential bots — 50% density"),
+    Line2D([0], [0], marker="^", color="w", markerfacecolor=BOT_COLOR,
+           markersize=8, label=f"Confirmed bots (n={len(pb_b):,})"),
+]
+ax.legend(handles=legend_els, loc="upper right", fontsize=9)
+save(fig, "potential_bots_14_velocity_active_days_density")
+
+
+# ── FIG 15 — Heavily reverted: potential bots as density ─────────────────────
+section("FIG 15: Heavily reverted — potential bot density")
+
+_x_pb15   = np.log1p(plot_pb["edit_velocity_active_days"].to_numpy())
+_y_pb15   = plot_pb["active_days"].to_numpy().astype(float)
+_x_hpb15  = np.log1p(heavy_pb["edit_velocity_active_days"].to_numpy())
+_y_hpb15  = heavy_pb["active_days"].to_numpy().astype(float)
+_x_hb15   = np.log1p(heavy_b["edit_velocity_active_days"].to_numpy())
+_y_hb15   = heavy_b["active_days"].to_numpy().astype(float)
+_x_hh15   = np.log1p(heavy_h["edit_velocity_active_days"].to_numpy())
+_y_hh15   = heavy_h["active_days"].to_numpy().astype(float)
+
+fig, ax = plt.subplots(figsize=(11, 6))
+
+# All potential bots — muted hexbin baseline
+ax.hexbin(_x_pb15, _y_pb15, gridsize=50, cmap="Purples",
+          norm=_LogNorm(vmin=1), mincnt=1, alpha=0.35,
+          linewidths=0, zorder=1)
+
+# Heavily reverted potential bots — vivid hexbin on top
+hb_hpb = ax.hexbin(_x_hpb15, _y_hpb15, gridsize=40, cmap="RdPu",
+                    norm=_LogNorm(vmin=1), mincnt=1, alpha=0.9,
+                    linewidths=0, zorder=2)
+plt.colorbar(hb_hpb, ax=ax, label="Heavily reverted potential bots (log count)")
+
+# KDE contours for heavily reverted potential bots
+_kde_contours(ax, _x_hpb15, _y_hpb15, color=POTENTIAL_COLOR, levels=(0.50, 0.90))
+
+# Heavily reverted humans — small scatter for comparison
+if len(_x_hh15) > 0:
+    ax.scatter(_x_hh15, _y_hh15, color=HUMAN_COLOR, s=12, zorder=5,
+               alpha=0.6, linewidths=0,
+               label=f"Humans ≥80% reverted (n={len(heavy_h):,})")
+
+# Heavily reverted confirmed bots — individual scatter
+if len(_x_hb15) > 0:
+    ax.scatter(_x_hb15, _y_hb15, color=BOT_COLOR, s=70, zorder=6, marker="^",
+               edgecolors="white", linewidths=0.5,
+               label=f"Confirmed bots ≥80% reverted (n={len(heavy_b):,})")
+
+tick_vals_vel = [0, 1, 5, 20, 100, 500]
+ax.set_xticks(np.log1p(tick_vals_vel))
+ax.set_xticklabels(tick_vals_vel)
+ax.set_xlabel("Edit velocity (edits per active day)")
+ax.set_ylabel("Active editing days")
+ax.set_title("Heavily reverted potential bots concentrate at high velocity")
+
+legend_els15 = [
+    Line2D([0], [0], color=POTENTIAL_COLOR, lw=1.5, ls="-",  label="Heavily reverted pb — 90% density"),
+    Line2D([0], [0], color=POTENTIAL_COLOR, lw=1.5, ls="--", label="Heavily reverted pb — 50% density"),
+]
+handles15, labels15 = ax.get_legend_handles_labels()
+ax.legend(handles=handles15 + legend_els15, loc="upper right", fontsize=9)
+save(fig, "potential_bots_15_heavily_reverted_density")
 
 
 # ── FIG 12 — Editing rhythm ───────────────────────────────────────────────────
@@ -622,8 +734,7 @@ ax.set_xticklabels([
     f"Confirmed bots\n(n={len(b_gap):,})",
 ], fontsize=10)
 ax.set_ylabel("Avg. time between consecutive edits (log scale)")
-ax.set_title("FIG 12 — Editing Rhythm: Avg. Time Between Consecutive Edits\n"
-             "All three groups — accounts with ≥2 edits only")
+ax.set_title("Potential bots edit on much shorter intervals than humans")
 
 def fmt_hours(h: float) -> str:
     if h < 1:    return f"{h*60:.0f} min"
@@ -635,29 +746,115 @@ def fmt_hours(h: float) -> str:
 for x_pos, arr in [(1, h_gap), (2, pb_gap), (3, b_gap)]:
     if len(arr) == 0:
         continue
-    mean_val = float(arr.mean())
-    mean_log = np.log1p(mean_val)
-    ax.scatter(x_pos, mean_log, marker="D", s=50, color="white",
+    med_val = float(np.median(arr))
+    med_log = np.log1p(med_val)
+    ax.scatter(x_pos, med_log, marker="D", s=50, color="white",
                edgecolors="#333333", linewidths=1.5, zorder=5)
-    # Put annotation to the right for boxes 1 & 2; to the left for box 3
-    if x_pos < 3:
-        ax.annotate(
-            f"mean: {fmt_hours(mean_val)}",
-            xy=(x_pos + 0.27, mean_log), xytext=(x_pos + 0.62, mean_log),
-            fontsize=9, va="center", color="#333333",
-            arrowprops=dict(arrowstyle="->", color="#555555", lw=1.0),
-        )
-    else:
-        ax.annotate(
-            f"mean: {fmt_hours(mean_val)}",
-            xy=(x_pos - 0.27, mean_log), xytext=(x_pos - 0.62, mean_log),
-            fontsize=9, va="center", ha="right", color="#333333",
-            arrowprops=dict(arrowstyle="->", color="#555555", lw=1.0),
-        )
 
 ax.spines[["top", "right"]].set_visible(False)
 fig.tight_layout()
 save(fig, "potential_bots_12_editing_rhythm")
+
+
+# ── FIG 13 — Edit-rank dominance: composition + cumulative contribution ───────
+section("FIG 13: Edit-rank dominance")
+
+# Combine all accounts with a group label, sorted by total_edits descending
+all_accounts = pl.concat([
+    bots.select(["user_text", "total_edits"]).with_columns(pl.lit("Confirmed bots").alias("group")),
+    potential_bots.select(["user_text", "total_edits"]).with_columns(pl.lit("Potential bots").alias("group")),
+    humans.select(["user_text", "total_edits"]).with_columns(pl.lit("Humans").alias("group")),
+]).sort("total_edits", descending=True)
+
+total_accounts = len(all_accounts)
+total_edits_all = float(all_accounts["total_edits"].sum())
+
+# ── Left panel: stacked % composition at top-N thresholds ────────────────────
+thresholds = [10, 50, 100, 500, 1_000, 5_000, 10_000, total_accounts]
+threshold_labels = ["Top 10", "Top 50", "Top 100", "Top 500",
+                    "Top 1k", "Top 5k", "Top 10k", "All"]
+
+comp_h, comp_pb, comp_b = [], [], []
+for n in thresholds:
+    top_n = all_accounts.head(n)
+    counts = top_n.group_by("group").agg(pl.len().alias("cnt"))
+    cnt = {row["group"]: row["cnt"] for row in counts.iter_rows(named=True)}
+    total_n = len(top_n)
+    comp_h.append(cnt.get("Humans", 0) / total_n * 100)
+    comp_pb.append(cnt.get("Potential bots", 0) / total_n * 100)
+    comp_b.append(cnt.get("Confirmed bots", 0) / total_n * 100)
+
+# ── Right panel: cumulative edit share as we walk down the ranked list ────────
+groups_arr = all_accounts["group"].to_list()
+edits_arr  = all_accounts["total_edits"].to_numpy().astype(float)
+
+cum_total = np.cumsum(edits_arr)
+cum_h  = np.cumsum(np.where(np.array(groups_arr) == "Humans",        edits_arr, 0))
+cum_pb = np.cumsum(np.where(np.array(groups_arr) == "Potential bots", edits_arr, 0))
+cum_b  = np.cumsum(np.where(np.array(groups_arr) == "Confirmed bots", edits_arr, 0))
+
+pct_total = cum_total / total_edits_all * 100
+pct_h     = cum_h  / total_edits_all * 100
+pct_pb    = cum_pb / total_edits_all * 100
+pct_b     = cum_b  / total_edits_all * 100
+
+x_ranks = np.arange(1, total_accounts + 1)
+
+# ── Draw ──────────────────────────────────────────────────────────────────────
+fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(16, 7))
+
+# Left: stacked bar
+x = np.arange(len(thresholds))
+bar_w = 0.55
+ax_left.bar(x, comp_h,  bar_w, label="Humans",        color=HUMAN_COLOR,     alpha=0.88)
+ax_left.bar(x, comp_pb, bar_w, bottom=comp_h,          label="Potential bots", color=POTENTIAL_COLOR, alpha=0.88)
+ax_left.bar(x, comp_b,  bar_w,
+            bottom=[h + p for h, p in zip(comp_h, comp_pb)],
+            label="Confirmed bots", color=BOT_COLOR, alpha=0.88)
+
+# Add % labels inside bars for potential bots (most interesting)
+for i, (h, pb, b) in enumerate(zip(comp_h, comp_pb, comp_b)):
+    if pb >= 3:
+        ax_left.text(i, h + pb / 2, f"{pb:.1f}%", ha="center", va="center",
+                     fontsize=8, color="white", fontweight="bold")
+    if b >= 3:
+        ax_left.text(i, h + pb + b / 2, f"{b:.1f}%", ha="center", va="center",
+                     fontsize=8, color="white", fontweight="bold")
+
+ax_left.set_xticks(x)
+ax_left.set_xticklabels(threshold_labels, fontsize=9)
+ax_left.set_ylabel("Share of accounts in group (%)")
+ax_left.set_ylim(0, 100)
+ax_left.set_title("Potential bots are overrepresented among top editors")
+ax_left.legend(loc="lower right", fontsize=9)
+ax_left.spines[["top", "right"]].set_visible(False)
+
+# Right: cumulative edit contribution (log x-axis for readability)
+ax_right.plot(x_ranks, pct_total, color="#aaaaaa", lw=1.2, ls="--", label="All accounts combined")
+ax_right.plot(x_ranks, pct_h,     color=HUMAN_COLOR,     lw=2.2, label="Humans")
+ax_right.plot(x_ranks, pct_pb,    color=POTENTIAL_COLOR,  lw=2.2, label="Potential bots")
+ax_right.plot(x_ranks, pct_b,     color=BOT_COLOR,        lw=2.2, label="Confirmed bots")
+
+ax_right.set_xscale("log")
+ax_right.set_xlabel("Account rank (1 = most edits, log scale)")
+ax_right.set_ylabel("Cumulative % of all edits")
+ax_right.set_ylim(0, 100)
+ax_right.set_title("A handful of potential bots drive a disproportionate share of all edits")
+ax_right.legend(loc="upper left", fontsize=9)
+ax_right.spines[["top", "right"]].set_visible(False)
+
+# Reference lines at 25 / 50 / 75 %
+for pct_line in [25, 50, 75]:
+    ax_right.axhline(pct_line, color="#dddddd", lw=0.8, ls=":")
+    ax_right.text(x_ranks[-1] * 1.02, pct_line, f"{pct_line}%",
+                  va="center", fontsize=7, color="#aaaaaa")
+
+fig.suptitle(
+    "Potential bots dominate the top of the edit leaderboard",
+    fontsize=11,
+)
+fig.tight_layout()
+save(fig, "potential_bots_13_edit_rank_dominance")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -667,7 +864,18 @@ section("TEMPORAL — loading raw edit data for potential bots")
 print("  Loading all 10 language files (may take several minutes)...")
 
 potential_bot_list = list(potential_bot_set)
-pb_daily_frames    = []
+
+# Subset of potential bots that meet the active-days threshold (for T9)
+active_pb_list = (
+    potential_bots
+    .filter(pl.col("active_days") > ACTIVE_DAYS_MIN_FILTER)
+    ["user_text"].to_list()
+)
+print(f"  Potential bots with active_days > {ACTIVE_DAYS_MIN_FILTER}: {len(active_pb_list):,}")
+
+pb_daily_frames        = []
+pb_hourly_frames       = []
+pb_hourly_frames_active = []   # filtered to ACTIVE_DAYS_MIN_FILTER
 
 for lang in LANGUAGES:
     edits_file = EDITS_DIR / f"{lang}wiki.json.gz"
@@ -687,9 +895,12 @@ for lang in LANGUAGES:
     edits = edits.with_columns(
         pl.col("revision_timestamp")
         .str.to_datetime(TIMESTAMP_FMT, time_unit="ms")
-        .dt.date()
-        .alias("date")
+        .alias("_ts")
     )
+    edits = edits.with_columns(
+        pl.col("_ts").dt.date().alias("date"),
+        pl.col("_ts").dt.hour().alias("hour"),
+    ).drop("_ts")
     edits = edits.with_columns(
         pl.col("edit_types_json").str.count_matches(r'\["Reference"').cast(pl.Int32).alias("n_ref"),
         pl.col("edit_types_json").str.count_matches(r'\["Template"') .cast(pl.Int32).alias("n_tmpl"),
@@ -716,6 +927,25 @@ for lang in LANGUAGES:
         .sort("date")
     )
     pb_daily_frames.append(daily)
+
+    hourly_pb = (
+        edits.group_by("hour")
+        .agg(pl.len().alias("total_edits"))
+        .with_columns(pl.lit(lang).alias("language"))
+        .sort("hour")
+    )
+    pb_hourly_frames.append(hourly_pb)
+
+    # Filtered hourly — only potential bots with active_days > ACTIVE_DAYS_MIN_FILTER
+    edits_active = edits.filter(pl.col("user_text").is_in(active_pb_list))
+    if edits_active.shape[0] > 0:
+        hourly_pb_active = (
+            edits_active.group_by("hour")
+            .agg(pl.len().alias("total_edits"))
+            .with_columns(pl.lit(lang).alias("language"))
+            .sort("hour")
+        )
+        pb_hourly_frames_active.append(hourly_pb_active)
 
 if not pb_daily_frames:
     print("  WARNING: No temporal data found for potential bots — skipping temporal figures.")
@@ -802,7 +1032,7 @@ ax.plot(dates_t, rolling_avg(total_edits), color="#333333", lw=1.5,
 ax.xaxis.set_major_locator(mdates.MonthLocator())
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
 ax.set_ylabel("Edits per day")
-ax.set_title("FIG T1 — Daily Edit Volume: Bots, Potential Bots, Humans (2025)")
+ax.set_title("Potential bots contribute a consistent share of daily Wikipedia edits")
 ax.legend(loc="upper right")
 save(fig, "potential_bots_T1_daily_volume")
 
@@ -828,8 +1058,7 @@ ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
 ax.xaxis.set_major_locator(mdates.MonthLocator())
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
 ax.set_ylabel("Share of all edits")
-ax.set_title("FIG T2 — Edit Share Over Time (Global, 2025)\n"
-             "Potential bots vs confirmed bots share of total edits")
+ax.set_title("Potential bots consistently outpace confirmed bots in edit share")
 ax.legend(loc="upper right")
 save(fig, "potential_bots_T2_global_share")
 
@@ -874,7 +1103,7 @@ for ax, lang in zip(axes, LANGUAGES):
     ax.set_title(f"{LANG_LABELS[lang]}  (pb avg {np.nanmean(pb_share_l):.1f}%)")
 
 axes[0].legend(fontsize=8, loc="upper right")
-fig.suptitle("FIG T3 — Potential Bot & Confirmed Bot Share per Language (2025)",
+fig.suptitle("Potential bot share varies substantially across languages",
              fontsize=13, fontweight="bold", y=1.01)
 fig.tight_layout()
 save(fig, "potential_bots_T3_share_per_language")
@@ -891,7 +1120,7 @@ merged_all  = merged_bh_g.join(
 )
 
 fig, ax = plt.subplots(figsize=(13, 5))
-colors_cat = ["#333333", "#2980B9", "#8E44AD", "#27AE60", "#E67E22"]
+colors_cat = ["#333333", "#2980B9", "#E74C3C", "#F39C12", "#E67E22"]
 
 for col, label, color in zip(EDIT_TYPES, [EDIT_LABELS[e] for e in EDIT_TYPES], colors_cat):
     b_vals_c  = merged_all[col].to_numpy().astype(float)
@@ -908,8 +1137,7 @@ ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
 ax.xaxis.set_major_locator(mdates.MonthLocator())
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
 ax.set_ylabel("Potential bot share of that edit type")
-ax.set_title("FIG T4 — Potential Bot Share by Edit Category (Global, 2025)\n"
-             f"Which edit types do potential bots dominate?  ({ROLLING_WINDOW}-day rolling avg)")
+ax.set_title("Potential bots dominate template and reference edit categories")
 ax.legend(loc="right", framealpha=0.9)
 save(fig, "potential_bots_T4_share_by_category")
 
@@ -968,8 +1196,7 @@ tick_labels    = [month_starts[wk] for wk in month_starts if wk in week_to_idx]
 ax.set_xticks(tick_positions)
 ax.set_xticklabels(tick_labels)
 ax.set_xlabel("Week of 2025")
-ax.set_title("FIG T5 — Potential Bot Share Heatmap: Language × Week (2025)\n"
-             "Darker green = higher potential-bot share that week in that language")
+ax.set_title("Potential bot activity concentrates in specific language-week combinations")
 save(fig, "potential_bots_T5_heatmap_language_week")
 
 
@@ -1002,11 +1229,179 @@ for ax, lang in zip(axes, LANGUAGES):
     ax.set_title(LANG_LABELS[lang])
 
 axes[0].legend(fontsize=8, loc="upper right")
-fig.suptitle("FIG T6 — Unique Editors per Day by Language (2025)\n"
-             "Confirmed bots vs potential bots vs humans",
+fig.suptitle("Potential bots form a stable fraction of daily active editors per language",
              fontsize=13, fontweight="bold", y=1.01)
 fig.tight_layout()
 save(fig, "potential_bots_T6_unique_editors_per_language")
+
+
+# ── FIG T7 — 24-hour editing rhythm: all three groups ─────────────────────────
+section("FIG T7: 24-hour editing rhythm")
+
+if not HOURLY_INPUT.exists():
+    print(f"  WARNING: {HOURLY_INPUT.name} not found — skipping T7. Re-run 06 first.")
+elif pb_hourly_frames:
+    df_hourly = pl.read_ndjson(HOURLY_INPUT)
+
+    global_hourly = (
+        df_hourly.group_by(["hour", "is_bot"])
+        .agg(pl.col("total_edits").sum())
+        .sort(["is_bot", "hour"])
+    )
+    bot_h = global_hourly.filter(pl.col("is_bot") == True).sort("hour")
+    hum_h = global_hourly.filter(pl.col("is_bot") == False).sort("hour")
+
+    pb_hourly_by_lang = pl.concat(pb_hourly_frames)   # keeps language column
+    pb_hourly_by_lang_active = (
+        pl.concat(pb_hourly_frames_active) if pb_hourly_frames_active else pl.DataFrame()
+    )
+
+    pb_hourly_all = (
+        pb_hourly_by_lang
+        .group_by("hour")
+        .agg(pl.col("total_edits").sum())
+        .sort("hour")
+    )
+
+    all_hours = np.arange(24)
+
+    def to_hour_array(frame: pl.DataFrame, col: str = "total_edits") -> np.ndarray:
+        hour_map = dict(zip(frame["hour"].to_list(),
+                            frame[col].to_numpy().astype(float)))
+        return np.array([hour_map.get(int(h), 0.0) for h in all_hours])
+
+    def norm_pct(arr: np.ndarray) -> np.ndarray:
+        total = arr.sum()
+        return arr / total * 100 if total > 0 else arr
+
+    bot_frac = norm_pct(to_hour_array(bot_h))
+    hum_frac = norm_pct(to_hour_array(hum_h))
+    pb_frac  = norm_pct(to_hour_array(pb_hourly_all))
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    # Shade night hours (22:00–06:00 UTC)
+    ax.axvspan(-0.5, 5.5,  alpha=0.06, color="navy", zorder=0)
+    ax.axvspan(21.5, 23.5, alpha=0.06, color="navy", zorder=0)
+    ax.axhline(100 / 24, color="#999999", lw=1.2, ls="--",
+               label="Uniform distribution (4.17% / h)")
+
+    ax.plot(all_hours, hum_frac, color=HUMAN_COLOR,     lw=2.5, marker="o", ms=4, label="Humans")
+    ax.plot(all_hours, pb_frac,  color=POTENTIAL_COLOR,  lw=2.5, marker="o", ms=4, label="Potential bots")
+    ax.plot(all_hours, bot_frac, color=BOT_COLOR,        lw=2.5, marker="o", ms=4, label="Confirmed bots")
+
+    ax.set_xticks(range(0, 24, 2))
+    ax.set_xlim(-0.5, 23.5)
+    ax.set_xlabel("Hour of day (UTC)")
+    ax.set_ylabel("% of group's total annual edits")
+    ax.set_title("Potential bots edit more uniformly around the clock than humans")
+    ax.legend(loc="upper left")
+    save(fig, "potential_bots_T7_24h_distribution")
+
+    # ── T8 — per-language 24h editing rhythm (2×5 grid, 3 groups) ─────────────
+    section("FIG T8 — 24h rhythm per language (3 groups)")
+
+    LANG_LABELS_10 = {
+        "ar": "Arabic", "de": "German", "en": "English",
+        "es": "Spanish", "fr": "French", "it": "Italian",
+        "nl": "Dutch", "pl": "Polish", "ru": "Russian", "sv": "Swedish",
+    }
+
+    fig, axes = plt.subplots(2, 5, figsize=(20, 8), sharey=False)
+    axes = axes.flatten()
+
+    for ax, lang in zip(axes, LANGUAGES):
+        # bot / human from df_hourly (confirmed bots, all humans)
+        lang_h = df_hourly.filter(pl.col("language") == lang)
+        bot_h_l = lang_h.filter(pl.col("is_bot") == True).sort("hour")
+        hum_h_l = lang_h.filter(pl.col("is_bot") == False).sort("hour")
+
+        # potential bots hourly for this language
+        pb_h_l = pb_hourly_by_lang.filter(pl.col("language") == lang).sort("hour")
+
+        # shade night
+        ax.axvspan(-0.5, 5.5,  alpha=0.06, color="navy", zorder=0)
+        ax.axvspan(21.5, 23.5, alpha=0.06, color="navy", zorder=0)
+        ax.axhline(100 / 24, color="#cccccc", lw=0.8, ls="--")
+
+        if hum_h_l.shape[0] > 0:
+            ax.plot(all_hours, norm_pct(to_hour_array(hum_h_l)),
+                    color=HUMAN_COLOR, lw=1.8, label="Humans")
+        if pb_h_l.shape[0] > 0:
+            ax.plot(all_hours, norm_pct(to_hour_array(pb_h_l)),
+                    color=POTENTIAL_COLOR, lw=1.8, label="Potential bots")
+        if bot_h_l.shape[0] > 0:
+            ax.plot(all_hours, norm_pct(to_hour_array(bot_h_l)),
+                    color=BOT_COLOR, lw=1.8, label="Confirmed bots")
+
+        ax.set_xticks(range(0, 24, 6))
+        ax.set_xticklabels(["0h", "6h", "12h", "18h"])
+        ax.set_xlim(-0.5, 23.5)
+        ax.set_title(LANG_LABELS_10.get(lang, lang))
+        ax.tick_params(axis="both", labelsize=8)
+
+    axes[0].legend(fontsize=8, loc="upper left")
+    for ax in axes:
+        ax.set_ylabel("")
+    axes[0].set_ylabel("% of group's edits", fontsize=8)
+    axes[5].set_ylabel("% of group's edits", fontsize=8)
+
+    fig.suptitle(
+        "24h edit patterns differ clearly between groups across all languages",
+        fontsize=11,
+    )
+    fig.tight_layout()
+    save(fig, "potential_bots_T8_24h_per_language")
+
+    # ── T9 — same as T8 but potential bots filtered to active_days > threshold ─
+    section(f"FIG T9 — 24h rhythm per language (potential bots active_days > {ACTIVE_DAYS_MIN_FILTER})")
+
+    if pb_hourly_by_lang_active.is_empty():
+        print(f"  No data for potential bots with active_days > {ACTIVE_DAYS_MIN_FILTER} — skipping T9.")
+    else:
+        n_active_pb = len(active_pb_list)
+        fig, axes = plt.subplots(2, 5, figsize=(20, 8), sharey=False)
+        axes = axes.flatten()
+
+        for ax, lang in zip(axes, LANGUAGES):
+            lang_h = df_hourly.filter(pl.col("language") == lang)
+            bot_h_l = lang_h.filter(pl.col("is_bot") == True).sort("hour")
+            hum_h_l = lang_h.filter(pl.col("is_bot") == False).sort("hour")
+            pb_h_l  = pb_hourly_by_lang_active.filter(pl.col("language") == lang).sort("hour")
+
+            ax.axvspan(-0.5, 5.5,  alpha=0.06, color="navy", zorder=0)
+            ax.axvspan(21.5, 23.5, alpha=0.06, color="navy", zorder=0)
+            ax.axhline(100 / 24, color="#cccccc", lw=0.8, ls="--")
+
+            if hum_h_l.shape[0] > 0:
+                ax.plot(all_hours, norm_pct(to_hour_array(hum_h_l)),
+                        color=HUMAN_COLOR, lw=1.8, label="Humans")
+            if pb_h_l.shape[0] > 0:
+                ax.plot(all_hours, norm_pct(to_hour_array(pb_h_l)),
+                        color=POTENTIAL_COLOR, lw=1.8,
+                        label=f"Potential bots (active >{ACTIVE_DAYS_MIN_FILTER}d)")
+            if bot_h_l.shape[0] > 0:
+                ax.plot(all_hours, norm_pct(to_hour_array(bot_h_l)),
+                        color=BOT_COLOR, lw=1.8, label="Confirmed bots")
+
+            ax.set_xticks(range(0, 24, 6))
+            ax.set_xticklabels(["0h", "6h", "12h", "18h"])
+            ax.set_xlim(-0.5, 23.5)
+            ax.set_title(LANG_LABELS_10.get(lang, lang))
+            ax.tick_params(axis="both", labelsize=8)
+
+        axes[0].legend(fontsize=8, loc="upper left")
+        for ax in axes:
+            ax.set_ylabel("")
+        axes[0].set_ylabel("% of group's edits", fontsize=8)
+        axes[5].set_ylabel("% of group's edits", fontsize=8)
+
+        fig.suptitle(
+            f"Highly active potential bots (>{ACTIVE_DAYS_MIN_FILTER} active days) show the most bot-like 24h patterns",
+            fontsize=10,
+        )
+        fig.tight_layout()
+        save(fig, "potential_bots_T9_24h_per_language_active")
 
 
 n_saved = len(list(OUTPUT_DIR.glob("*.png")))
