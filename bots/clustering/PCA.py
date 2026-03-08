@@ -1,5 +1,6 @@
 import polars as pl
 import numpy as np
+import json
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -134,21 +135,51 @@ def export_bot_usernames(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
         print(f"  Cluster {c}: {v['n_total']} users "              f"({len(v['known_bots'])} known bots, {len(v['undetected_bots'])} undetected)")
     return result
 
+# FILTERING
+def load_filter_usernames(filter_json_path: str, filter_key: str = "all_bot_cluster_users") -> set:
+    """
+    Load usernames from a filter JSON file.
+    Extracts the list from the specified key (default: all_bot_cluster_users).
+    Returns a set of usernames for fast membership checking.
+    """
+    with open(filter_json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    usernames = data.get(filter_key, [])
+    if not isinstance(usernames, list):
+        raise ValueError(f"Key '{filter_key}' in {filter_json_path} is not a list")
+    
+    return set(usernames)
+
 # MAIN
 if __name__ == "__main__":
-    N_CLUSTERS = 5
+    N_CLUSTERS = 2
 
     # Which clusters to export as bots (set to None to use automatic detection)
     EXPORT_CLUSTERS = None   # Manually specify or none
 
-    ENTITY_LIST_PATH = r"C:\Users\lmlin\Desktop\DataFest\datafest\bots\entity_list.json"
-    DATA_DIR         = r"C:\Users\lmlin\Desktop\DataFest\datafest_old\data"
-    #ENTITY_LIST_PATH = r"../entity_list.json"
-    #DATA_DIR         = r"../../data"
+    # FILTERING: Re-cluster on previous bot results
+    FILTERING_FLAG = True   # Set to True to filter to users from FILTER_JSON
+    FILTER_JSON = "bot_usernames_unfiltered.json"  # Path to JSON with usernames
+    FILTER_KEY = "all_bot_cluster_users"  # Key to extract from FILTER_JSON
+
+    # ENTITY_LIST_PATH = r"C:\Users\lmlin\Desktop\DataFest\datafest\bots\entity_list.json"
+    # DATA_DIR         = r"C:\Users\lmlin\Desktop\DataFest\datafest_old\data"
+    ENTITY_LIST_PATH = r"../entity_list.json"
+    DATA_DIR         = r"../../data/data/edit_types"
 
     print("Loading entity list...")
     entity_list = load_entity_list(ENTITY_LIST_PATH)
     print(f"  {len(entity_list)} users loaded")
+
+    # Apply filtering if enabled
+    if FILTERING_FLAG:
+        print(f"\nApplying filter from {FILTER_JSON} (key: {FILTER_KEY})...")
+        filter_usernames = load_filter_usernames(FILTER_JSON, FILTER_KEY)
+        print(f"  Filter contains {len(filter_usernames)} usernames")
+        
+        entity_list = [u for u in entity_list if u["user_text"] in filter_usernames]
+        print(f"  Filtered to {len(entity_list)} users")
 
     print("\nLoading is_bot from all language editions...")
     is_bot_df = load_is_bot_all_languages(DATA_DIR)

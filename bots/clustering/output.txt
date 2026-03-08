@@ -1,0 +1,105 @@
+Loading entity list...
+  783412 users loaded
+
+Applying filter from bot_usernames_unfiltered.json (key: all_bot_cluster_users)...
+  Filter contains 26001 usernames
+  Filtered to 26001 users
+
+Loading is_bot from all language editions...
+  Loading arwiki...
+  Loading dewiki...
+  Loading enwiki...
+  Loading eswiki...
+  Loading frwiki...
+  Loading itwiki...
+  Loading nlwiki...
+  Loading plwiki...
+  Loading ruwiki...
+  Loading svwiki...
+  783570 unique users found
+  Known bots: 299
+
+Building feature matrix...
+  26001 users, 19 features
+
+Running PCA...
+  Finding optimal number of components (target: 80% variance)...
+Variance plot saved to pca_variance.png
+  -> 8 components explain 85.8% of variance (target: 80%)
+  PCA for clustering: 8 components -> 85.8% variance explained
+  PCA for plotting:   PC1=21.3%, PC2=16.4%
+
+Running KMeans (n_clusters=2)...
+  KMeans with 2 clusters done.
+
+Labelling clusters via ground truth:
+
+ Cluster     Users  Known Bots  Top Feature
+──────────────────────────────────────────────────────────────────────
+       0      3367       1.7%  median_seconds_between_edits (1333579.31) ← BOT
+       1     22634       0.2%  median_seconds_between_edits (1223894.58) ← BOT
+
+→ Bot clusters (≥0.1% known bots): {np.int32(0), np.int32(1)}
+
+Plotting...
+/var/home/jos/projects/datafest/bots/clustering/PCA.py:35: MatplotlibDeprecationWarning: The get_cmap function was deprecated in Matplotlib 3.7 and will be removed in 3.11. Use ``matplotlib.colormaps[name]`` or ``matplotlib.colormaps.get_cmap()`` or ``pyplot.get_cmap()`` instead.
+  cmap            = plt.cm.get_cmap("tab20", len(unique_clusters))
+Plot saved to bot_detection_kmeans_plot.png
+
+Feature Importance...
+Loadings plot saved to kmeans_pca_loadings.png
+
+Top Features:
+                                     PC1       PC2  importance
+pct_of_reverted_edits          -0.448431 -0.389025    0.159230
+pct_of_reverting_edits         -0.448431 -0.389025    0.159230
+pct_tag_visual_editors          0.491926 -0.211391    0.139368
+total_edits                    -0.179252  0.535371    0.125924
+pct_tag_reversion_and_rollback -0.458413  0.000182    0.097609
+pct_tag_mobile_editing         -0.221255  0.265520    0.090626
+unique_edited_languages        -0.209671  0.246947    0.085115
+median_seconds_between_edits    0.078883 -0.355669    0.075099
+avg_revision_comment_length     0.004550 -0.282766    0.047325
+pct_tag_edit_checking          -0.062400  0.145294    0.037102
+
+Cluster Feature Profiles...
+Cluster profiles plot saved to kmeans_cluster_profiles.png
+
+Exporting results...
+Results saved to bot_detection_kmeans_results.csv
+
+── Summary by cluster ───────────────────
+shape: (4, 3)
+┌─────────┬─────────────────┬───────┐
+│ cluster ┆ predicted_label ┆ len   │
+│ ---     ┆ ---             ┆ ---   │
+│ i32     ┆ str             ┆ u32   │
+╞═════════╪═════════════════╪═══════╡
+│ 0       ┆ known_bot       ┆ 58    │
+│ 0       ┆ undetected_bot  ┆ 3309  │
+│ 1       ┆ known_bot       ┆ 39    │
+│ 1       ┆ undetected_bot  ┆ 22595 │
+└─────────┴─────────────────┴───────┘
+
+Exporting bot usernames...
+Bot usernames saved to bot_usernames.json
+  Total users in bot clusters: 26001
+  Cluster 0: 3367 users (58 known bots, 3309 undetected)
+  Cluster 1: 22634 users (39 known bots, 22595 undetected)
+
+Validating clustering...
+
+── Clustering Validation ────────────────────────────────────
+
+  Internal metrics (cluster structure):
+    Silhouette Score:      0.4485  (higher is better, >0.3 = acceptable)
+    Davies-Bouldin Index:  1.2910  (lower is better)
+
+  External metrics (vs known bots, n=97):
+    Homogeneity Score:     0.0922  (higher is better)
+    Precision:             0.0037  (of predicted bots, how many are known bots?)
+    Recall:                1.0000  (of known bots, how many did we catch?)
+    F1 Score:              0.0074
+    Known bots caught:     97/97
+
+─────────────────────────────────────────────────────────────
