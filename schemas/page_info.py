@@ -1,0 +1,7 @@
+WIKI_DB = "wiki_db"
+PAGE_ID = "page_id"
+QID = "qid"
+EMBEDDING = "embedding"
+PREDICTED_LABELS = "predicted_labels"
+PAGEVIEWS = "pageviews"
+PAGE_TITLE = "page_title"
