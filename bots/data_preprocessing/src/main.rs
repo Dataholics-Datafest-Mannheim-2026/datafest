@@ -10,9 +10,11 @@ use serde::{Deserialize, Serialize};
 
 const USER_TEXT_CAP: usize = 50;
 const REVISION_TAGS_CAP: usize = 25;
-const FILES: [&str; 8] = [
+const FILES: [&str; 10] = [
     "../../data/data/edit_types/arwiki.json",
     "../../data/data/edit_types/dewiki.json",
+    "../../data/data/edit_types/enwiki.json",
+    "../../data/data/edit_types/frwiki.json",
     "../../data/data/edit_types/eswiki.json",
     "../../data/data/edit_types/itwiki.json",
     "../../data/data/edit_types/nlwiki.json",
