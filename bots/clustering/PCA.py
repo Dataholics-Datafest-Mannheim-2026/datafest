@@ -12,24 +12,18 @@ from utils import (
     label_clusters,
     plot_pca_loadings,
     plot_cluster_profiles,
+    validate_clustering,
 )
 
-# ─────────────────────────────────────────────
 # CLUSTERING
-# ─────────────────────────────────────────────
-
-def run_kmeans(X_pca: np.ndarray, n_clusters: int = 12):
+def run_kmeans(X_pca: np.ndarray, n_clusters: int = 4):
     """Run KMeans. Change n_clusters freely."""
     kmeans         = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     cluster_labels = kmeans.fit_predict(X_pca)
     print(f"  KMeans with {n_clusters} clusters done.")
     return cluster_labels
 
-
-# ─────────────────────────────────────────────
 # VISUALISATION
-# ─────────────────────────────────────────────
-
 def plot_results(X_pca, cluster_labels, is_bot, bot_clusters, pca,
                  output_path="bot_detection_kmeans_plot.png"):
     """
@@ -70,11 +64,7 @@ def plot_results(X_pca, cluster_labels, is_bot, bot_clusters, pca,
     print(f"Plot saved to {output_path}")
     plt.show()
 
-
-# ─────────────────────────────────────────────
 # EXPORT
-# ─────────────────────────────────────────────
-
 def export_results(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
                    bot_clusters: set,
                    output_path="bot_detection_kmeans_results.csv"):
@@ -101,11 +91,9 @@ def export_results(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
     print(result.group_by(["cluster", "predicted_label"]).len().sort(["cluster", "predicted_label"]))
     return result
 
-
-
 def export_bot_usernames(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
                           bot_clusters: set,
-                          output_path: str = "bot_usernames_unfiltered.json"):
+                          output_path: str = "bot_usernames.json"):
     """
     Export usernames from bot clusters as JSON.
     Structure: {cluster_id: {"known_bots": [...], "undetected_bots": [...]}}
@@ -146,19 +134,17 @@ def export_bot_usernames(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
         print(f"  Cluster {c}: {v['n_total']} users "              f"({len(v['known_bots'])} known bots, {len(v['undetected_bots'])} undetected)")
     return result
 
-# ─────────────────────────────────────────────
-# MAIN  –  change N_CLUSTERS here
-# ─────────────────────────────────────────────
-
+# MAIN
 if __name__ == "__main__":
+    N_CLUSTERS = 5
+
+    # Which clusters to export as bots (set to None to use automatic detection)
+    EXPORT_CLUSTERS = None   # Manually specify or none
+
     ENTITY_LIST_PATH = r"C:\Users\lmlin\Desktop\DataFest\datafest\bots\entity_list.json"
     DATA_DIR         = r"C:\Users\lmlin\Desktop\DataFest\datafest_old\data"
     #ENTITY_LIST_PATH = r"../entity_list.json"
     #DATA_DIR         = r"../../data"
-    N_CLUSTERS = 12
-
-    # Override which clusters to export as bots (set to None to use automatic detection)
-    EXPORT_CLUSTERS = None   # Manually specify or none
 
     print("Loading entity list...")
     entity_list = load_entity_list(ENTITY_LIST_PATH)
@@ -206,3 +192,6 @@ if __name__ == "__main__":
 
     print("\nExporting bot usernames...")
     export_bot_usernames(feature_df, cluster_labels, export_clusters)
+
+    print("\nValidating clustering...")
+    validate_clustering(X_pca, cluster_labels, feature_df, export_clusters)

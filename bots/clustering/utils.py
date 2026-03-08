@@ -1,6 +1,3 @@
-import glob
-import os
-import pydantic
 import polars as pl
 import pandas as pd
 import json
@@ -10,21 +7,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-# ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
 
+# CONFIG
 ALL_LANGUAGES = ["ar", "de", "en", "es", "fr", "it", "nl", "pl", "ru", "sv"]
 
-# ─────────────────────────────────────────────
 # LOAD DATA
-# ─────────────────────────────────────────────
-
 def load_entity_list(path: str) -> list:
-    """Load the precomputed feature JSON.
-    Handles both a list of dicts and a dict-of-dicts (key = username).
-    Injects the outer key as 'user_text' if not already present.
-    """
+    """Load the precomputed feature JSON."""
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     if isinstance(data, dict):
@@ -36,18 +25,16 @@ def load_entity_list(path: str) -> list:
     return data
 
 def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:
-    """Load is_bot ground truth from all available language editions (files named ??wiki.json.gz),
-    searching recursively under data_dir and accepting any two-character language prefix."""
-    data_dir = Path(data_dir)
+    """Load is_bot ground truth from all available language editions."""
     dfs = []
-
-    for path in data_dir.rglob("??wiki.json.gz"):
-        try:
-            print(f"  Loading {path.name}...")
-            df = pl.read_ndjson(path).select(["user_text", "is_bot"])
-            dfs.append(df)
-        except Exception as e:
-            print(f"  Failed to load {path.name}: {e}")
+    for lang in ALL_LANGUAGES:
+        path = Path(data_dir) / f"{lang}wiki.json.gz"
+        if not path.exists():
+            print(f"  Skipping {lang}wiki – file not found")
+            continue
+        print(f"  Loading {lang}wiki...")
+        df = pl.read_ndjson(path).select(["user_text", "is_bot"])
+        dfs.append(df)
 
     if not dfs:
         raise FileNotFoundError(f"No language files found in {data_dir}")
@@ -58,11 +45,7 @@ def load_is_bot_all_languages(data_dir: str) -> pl.DataFrame:
         .agg(pl.col("is_bot").max().alias("is_bot"))
     )
 
-
-# ─────────────────────────────────────────────
 # FEATURE ENGINEERING
-# ─────────────────────────────────────────────
-
 def aggregate_edits_per_day(edits_per_day: list) -> dict:
     """Flatten list of {day: count} dicts into aggregate stats."""
     counts = []
@@ -134,11 +117,7 @@ def build_feature_matrix(entity_list: list, is_bot_df: pl.DataFrame) -> pl.DataF
         rows.append(row)
     return pl.DataFrame(rows)
 
-
-# ─────────────────────────────────────────────
 # PCA
-# ─────────────────────────────────────────────
-
 def find_optimal_components(X_scaled, target_variance=0.80,
                              output_path="pca_variance.png"):
     """
@@ -168,9 +147,18 @@ def find_optimal_components(X_scaled, target_variance=0.80,
     return n_optimal
 
 
+# Features that are counts/durations and benefit from log transform
+LOG_FEATURES = {
+    "total_edits", "median_seconds_between_edits", "max_edits_per_day",
+    "avg_edits_per_day", "std_edits_per_day", "active_days",
+    "unique_edited_articles", "unique_edited_languages",
+    "avg_revision_comment_length", "avg_edit_hours",
+}
+
 def run_pca(feature_df, n_components=None, target_variance=0.80):
     """
     Scale features and run PCA.
+    - Log-transforms skewed count/duration features before scaling.
     - If n_components is None, automatically finds how many components
       are needed to reach target_variance (default 80%).
     - Always also computes a 2D projection for visualisation.
@@ -180,8 +168,14 @@ def run_pca(feature_df, n_components=None, target_variance=0.80):
     meta_cols    = ["user_text", "is_bot"]
     feature_cols = [c for c in feature_df.columns if c not in meta_cols]
 
-    X        = feature_df.select(feature_cols).to_numpy().astype(float)
-    X        = np.nan_to_num(X)
+    X = feature_df.select(feature_cols).to_numpy().astype(float)
+    X = np.nan_to_num(X)
+
+    # Log-transform skewed features (pct_* features stay as-is)
+    for i, col in enumerate(feature_cols):
+        if col in LOG_FEATURES:
+            X[:, i] = np.log1p(X[:, i])
+
     scaler   = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
@@ -204,11 +198,7 @@ def run_pca(feature_df, n_components=None, target_variance=0.80):
 
     return X_pca, X_pca_2d, pca, pca_2d, feature_cols
 
-
-# ─────────────────────────────────────────────
 # CLUSTER LABELLING
-# ─────────────────────────────────────────────
-
 def label_clusters(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
                    bot_threshold: float = 0.001) -> set:
     """
@@ -259,10 +249,7 @@ def label_clusters(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
     return bot_clusters, cluster_profiles
 
 
-# ─────────────────────────────────────────────
 # FEATURE IMPORTANCE
-# ─────────────────────────────────────────────
-
 def plot_pca_loadings(pca, feature_cols, top_n=10, output_path="pca_loadings.png"):
     """Feature importance via PCA loadings – shared across all models."""
     loadings = pd.DataFrame(
@@ -298,6 +285,7 @@ def plot_pca_loadings(pca, feature_cols, top_n=10, output_path="pca_loadings.png
     print("\nTop Features:")
     print(top_features.sort_values("importance", ascending=False))
     return top_features
+
 
 def plot_cluster_profiles(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
                            bot_clusters: set, top_n: int = 10,
@@ -357,3 +345,69 @@ def plot_cluster_profiles(feature_df: pl.DataFrame, cluster_labels: np.ndarray,
     plt.savefig(output_path, dpi=150)
     print(f"Cluster profiles plot saved to {output_path}")
     plt.show()
+
+# VALIDATION
+def validate_clustering(X_pca: np.ndarray, cluster_labels: np.ndarray,
+                         feature_df: pl.DataFrame, bot_clusters: set,
+                         sample_size: int = 10000):
+    """
+    Validates clustering quality using both internal and external metrics.
+
+    Internal (no labels needed):
+      - Silhouette Score: how well-separated the clusters are (-1 to 1, higher = better)
+      - Davies-Bouldin Index: avg similarity of each cluster to its most similar one (lower = better)
+
+    External (uses is_bot ground truth):
+      - Homogeneity: are known bots concentrated in few clusters? (0 to 1, higher = better)
+      - Precision: of users predicted as bots, how many are actually known bots?
+      - Recall: of all known bots, how many did we catch in bot clusters?
+      - F1: harmonic mean of precision and recall
+    """
+    from sklearn.metrics import (
+        silhouette_score, davies_bouldin_score,
+        homogeneity_score, precision_score, recall_score, f1_score
+    )
+
+    is_bot   = np.array(feature_df["is_bot"].to_list(), dtype=bool)
+    n        = len(cluster_labels)
+
+    # Binary prediction: 1 if user is in a bot cluster, 0 otherwise
+    pred_bot = np.array([1 if c in bot_clusters else 0 for c in cluster_labels])
+
+    print("\n── Clustering Validation ────────────────────────────────────")
+
+    # Internal metrics (subsample for speed)
+    sample_idx = np.random.choice(n, size=min(sample_size, n), replace=False)
+    sil = silhouette_score(X_pca[sample_idx], cluster_labels[sample_idx])
+    db  = davies_bouldin_score(X_pca, cluster_labels)
+    print(f"\n  Internal metrics (cluster structure):")
+    print(f"    Silhouette Score:      {sil:.4f}  (higher is better, >0.3 = acceptable)")
+    print(f"    Davies-Bouldin Index:  {db:.4f}  (lower is better)")
+
+    # External metrics (vs known bots)
+    hom  = homogeneity_score(is_bot.astype(int), cluster_labels)
+    prec = precision_score(is_bot, pred_bot, zero_division=0)
+    rec  = recall_score(is_bot, pred_bot, zero_division=0)
+    f1   = f1_score(is_bot, pred_bot, zero_division=0)
+    n_known_bots   = is_bot.sum()
+    n_caught       = (is_bot & pred_bot.astype(bool)).sum()
+
+    print(f"\n  External metrics (vs known bots, n={n_known_bots}):")
+    print(f"    Homogeneity Score:     {hom:.4f}  (higher is better)")
+    print(f"    Precision:             {prec:.4f}  (of predicted bots, how many are known bots?)")
+    print(f"    Recall:                {rec:.4f}  (of known bots, how many did we catch?)")
+    print(f"    F1 Score:              {f1:.4f}")
+    print(f"    Known bots caught:     {n_caught}/{n_known_bots}")
+
+    print("\n─────────────────────────────────────────────────────────────")
+
+    return {
+        "silhouette":      sil,
+        "davies_bouldin":  db,
+        "homogeneity":     hom,
+        "precision":       prec,
+        "recall":          rec,
+        "f1":              f1,
+        "bots_caught":     int(n_caught),
+        "total_known_bots": int(n_known_bots),
+    }
