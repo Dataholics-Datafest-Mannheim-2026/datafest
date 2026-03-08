@@ -1,0 +1,105 @@
+tags_yes:
+  mobile_editing:
+    - advanced mobile edit
+    - android app edit
+    - ios app edit
+    - mobile app edit
+    - mobile edit
+    - mobile web edit
+  
+  translation_tools:
+    - contenttranslation
+    - contenttranslation-v2
+    - sectiontranslation
+  
+  visual_editors:
+    - visualeditor
+    - visualeditor-switched
+    - wikieditor
+    - emoji
+  
+  edit_checking:
+    - editcheck-newcontent
+    - editcheck-newreference
+  
+  reversion_and_rollback:
+    - mw-reverted
+    - mw-rollback
+    - mw-undo
+    - mw-manual-revert
+  
+  bot_assisted_editing:
+    - huggle
+    - twinkle
+  
+  other:
+    - mw-blank
+
+tags_no:
+  - AWB
+  - Musa3id
+  - 'OAuth CID: 4664'
+  - 'OAuth CID: 5481'
+  - 'OAuth CID: 6365'
+  - RWikiAuto
+  - WPCleaner
+  - app-full-source
+  - app-rollback
+  - app-section-source
+  - app-select-source
+  - app-suggestededit
+  - app-undo
+  - campaign-external-machine-translation
+  - contenttranslation-high-unmodified-mt-text
+  - disambiguator-link-added
+  - editcheck-paste-shown
+  - editcheck-reference-decline-common-knowledge
+  - editcheck-reference-decline-irrelevant
+  - editcheck-reference-decline-other
+  - editcheck-reference-decline-uncertain
+  - editcheck-references
+  - editcheck-references-activated
+  - editcheck-references-shown
+  - mw-changed-redirect-target
+  - mw-new-redirect
+  - mw-recreated
+  - mw-removed-redirect
+  - mw-replace
+  - newcomer task
+  - newcomer task copyedit
+  - newcomer task expand
+  - newcomer task image suggestion
+  - newcomer task links
+  - newcomer task references
+  - newcomer task section image suggestion
+  - newcomer task update
+  - quickLinker
+  - visualeditor-wikitext
+  - إزالة نصوص  # Removing text
+  - إضافة أرقام عربية مشرقية  # Adding Eastern Arabic numerals
+  - إضافة وصلات خارجية في مقالات غير مراجعة  # Adding external links in unreviewed articles  # Adding external links in unreviewed articles
+  - إفراغ مقطع كامل  # Emptying a complete section
+  - استبدال "الصحراء الغربية"  # Replacing 'Western Sahara'
+  - استبدال مصطلح داعش  # Replacing ISIS term
+  - تراجع عن التعديلات لغير المحررين  # Rollback edits for non-editors  # Rollback edits for non-editors
+  - تعديل شريط البوابات  # Editing portal bar
+  - تعديل صفحات التوضيح  # Editing disambiguation pages
+  - تعديلات طويلة  # Long edits
+  - تعديلات قصيرة  # Short edits  # Short edits
+  - تعديلات كومنز  # Commons edits
+  - تغير الوصلات الداخلية  # Changing internal links
+  - تغير في القوالب  # Changing templates
+  - تغيير إسرائيل إلى فلسطين  # Changing Israel to Palestine  # Changing Israel to Palestine
+  - تغيير التواريخ  # Changing dates
+  - تكرار محارف  # Repeating characters
+  - تمت إضافة وسم nowiki  # Nowiki tag added
+  - رموز يونيكود  # Unicode symbols  # Unicode symbols
+  - صفحات لاعبي كرة القدم  # Football player pages
+  - كتابة ألفاظ نابية أو شخبطة  # Writing profanity or scribbles
+  - لا أحرف عربية مضافة  # No Arabic characters added
+  - لفظ تباهي  # Boasting expression  # Boasting expression
+  - مقالات كمية  # Quantitative articles
+  - نسخ محتمل  # Possible copying
+  - نص قبل القالب  # Text before template
+  - وصلات خارجية للمراجعة  # External links for review
+  - وصلات خارجية للمراجعة 2  # External links for review 2
