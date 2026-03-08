@@ -153,13 +153,13 @@ def load_filter_usernames(filter_json_path: str, filter_key: str = "all_bot_clus
 
 # MAIN
 if __name__ == "__main__":
-    N_CLUSTERS = 2
+    N_CLUSTERS = 5
 
     # Which clusters to export as bots (set to None to use automatic detection)
     EXPORT_CLUSTERS = None   # Manually specify or none
 
     # FILTERING: Re-cluster on previous bot results
-    FILTERING_FLAG = True   # Set to True to filter to users from FILTER_JSON
+    FILTERING_FLAG = False   # Set to True to filter to users from FILTER_JSON
     FILTER_JSON = "bot_usernames_unfiltered.json"  # Path to JSON with usernames
     FILTER_KEY = "all_bot_cluster_users"  # Key to extract from FILTER_JSON
 
